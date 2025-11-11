@@ -562,26 +562,27 @@
         }, 200); // 200ms 防抖時間
 
         window.addEventListener('resize', debouncedResize);
-
-
+        
+		timeIntervalInput.value = 20;
+     
         // 頁面加載時自動填入範例數據並計算一次
-        window.onload = () => {
-             // 範例資料 (與之前相同)
-             const N_demo = 16;
-             const dt_ns_demo = 1000;
-             const f_signal = 125000; // 125 kHz
-             const signal_data = Array.from({ length: N_demo }, (_, i) => {
-                 const t = i * (dt_ns_demo * 1e-9);
-                 const value = 50 * Math.sin(2 * Math.PI * f_signal * t) + 5 * (Math.random() - 0.5);
-                 return Math.round(value * 100) / 100;
-             });
+        <!-- window.onload = () => { -->
+             <!-- // 範例資料 (與之前相同) -->
+             <!-- const N_demo = 16; -->
+             <!-- const dt_ns_demo = 1000; -->
+             <!-- const f_signal = 125000; // 125 kHz -->
+             <!-- const signal_data = Array.from({ length: N_demo }, (_, i) => { -->
+                 <!-- const t = i * (dt_ns_demo * 1e-9); -->
+                 <!-- const value = 50 * Math.sin(2 * Math.PI * f_signal * t) + 5 * (Math.random() - 0.5); -->
+                 <!-- return Math.round(value * 100) / 100; -->
+             <!-- }); -->
              
-             signalInput.value = signal_data.join(', ');
-             timeIntervalInput.value = dt_ns_demo;
+             <!-- signalInput.value = signal_data.join(', '); -->
+             <!-- timeIntervalInput.value = dt_ns_demo; -->
              
-             updateFsDisplay();
-             calculateAndPlot();
-        };
+             <!-- updateFsDisplay(); -->
+             <!-- calculateAndPlot(); -->
+        <!-- }; -->
 
     </script>
 </body>
