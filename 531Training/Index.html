@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    
+    <title>5/3/1 健力課表 (v3)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <style>
+/* --- 基本樣式 --- */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  margin: 0;
+  padding: 15px;
+  background-color: #f4f7f6;
+  color: #333;
+}
+h2, h3 {
+  color: #1a1a1a;
+  border-bottom: 2px solid #e0e0e0;
+  padding-bottom: 8px;
+}
+
+/* --- 輸入區塊 (手機友善) --- */
+.input-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 15px;
+  margin-bottom: 20px;
+}
+.input-group {
+  display: flex;
+  flex-direction: column;
+}
+.input-group label {
+  font-weight: bold;
+  margin-bottom: 5px;
+  font-size: 0.9em;
+  color: #555;
+}
+.input-group input {
+  padding: 10px;
+  font-size: 1.1em;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* --- 課表表格 --- */
+.table-container {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #ffffff;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+th, td {
+  padding: 12px 10px;
+  text-align: left;
+  border-bottom: 1px solid #e0e0e0;
+  word-break: break-word;
+  font-size: 0.95em;
+}
+
+th {
+  background-color: #f9f9f9;
+  color: #444;
+}
+
+td:first-child {
+  font-weight: bold;
+  white-space: nowrap;
+  color: #111;
+}
+
+.weight {
+  font-weight: bold;
+  text-align: right;
+}
+
+/* --- 表頭 --- */
+thead th {
+  background-color: #e9ecef;
+  color: #000;
+  position: sticky;
+  top: 0;
+}
+
+/* --- Week 標題列 --- */
+.week-header td {
+  background-color: #f8f9fa;
+  font-weight: bold;
+  color: #333;
+  border-top: 2px solid #ddd;
+}
+
+/* === 顏色辨識度提升區 === */
+/* 上肢日 (Day1 握推, Day3 肩推) - 藍系 */
+td:nth-child(2), td:nth-child(4) {
+  color: #005a9c;
+  background-color: #f2f8ff;
+}
+
+/* 下肢日 (Day2 深蹲, Day4 硬舉) - 綠系 */
+td:nth-child(3), td:nth-child(5) {
+  color: #006b50;
+  background-color: #f3fbf6;
+}
+
+/* 提高視覺間距讓交錯更柔和 */
+tbody tr:nth-child(even) td {
+  border-bottom: 1px solid #dfe6ec;
+}
+
+/* --- 響應式設計：手機上縮小字體與間距 --- */
+@media screen and (max-width: 600px) {
+  th, td {
+    font-size: 0.8em;
+    padding: 6px;
+  }
+}
+</style>
+
+
+</head>
+<body>
+
+    <h2>5/3/1 健力課表計算器</h2>
+
+    <h3>1. 輸入您的 1RM (kg)</h3>
+    <div class="input-section">
+        <div class="input-group">
+            <label for="rm-bench">握推 (G3)</label>
+            <input type="number" id="rm-bench" value="129.3" step="0.1">
+        </div>
+        <div class="input-group">
+            <label for="rm-squat">深蹲 (H3)</label>
+            <input type="number" id="rm-squat" value="49.7" step="0.1">
+        </div>
+        <div class="input-group">
+            <label for="rm-press">肩推 (I3)</label>
+            <input type="number" id="rm-press" value="86.9" step="0.1">
+        </div>
+        <div class="input-group">
+            <label for="rm-deadlift">硬舉 (J3)</label>
+            <input type="number" id="rm-deadlift" value="99.3" step="0.1">
+        </div>
+        <div class="input-group">
+            <label for="cycle">循環數 (K2)</label>
+            <input type="number" id="cycle" value="1" step="1">
+        </div>
+    </div>
+
+    <h3>2. 您的課表 </h3>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>日期</th>
+                    <th>Day 1: </th>
+                    <th>Day 2: </th>
+                    <th>Day 3: </th>
+                    <th>Day 4: </th>
+                </tr>
+
+            </thead>
+            <tbody>
+                <tr class="week-header">
+                    <td colspan="5">Week 1 主訓練組 (kg)</td>
+                </tr>
+<tr>
+  <td><strong>項目標示</strong></td>
+  <td class="weight"><strong>握推</strong></td>
+  <td class="weight"><strong>深蹲</strong></td>
+  <td class="weight"><strong>肩推</strong></td>
+  <td class="weight"><strong>硬舉</strong></td>
+</tr>
+
+
+                <tr>
+                    <td>65% x 5</td>
+                    <td class="weight" id="b4">...</td>
+                    <td class="weight" id="c4">...</td>
+                    <td class="weight" id="d4">...</td>
+                    <td class="weight" id="e4">...</td>
+                </tr>
+                <tr>
+                    <td>75% x 5</td>
+                    <td class="weight" id="b5">...</td>
+                    <td class="weight" id="c5">...</td>
+                    <td class="weight" id="d5">...</td>
+                    <td class="weight" id="e5">...</td>
+                </tr>
+                <tr>
+                    <td>85% x 5+</td>
+                    <td class="weight" id="b6">...</td>
+                    <td class="weight" id="c6">...</td>
+                    <td class="weight" id="d6">...</td>
+                    <td class="weight" id="e6">...</td>
+                </tr>
+                <tr class="week-header">
+                    <td colspan="5">Week 2 主訓練組 (kg)</td>
+                </tr>
+<tr>
+  <td><strong>項目標示</strong></td>
+  <td class="weight"><strong>握推</strong></td>
+  <td class="weight"><strong>深蹲</strong></td>
+  <td class="weight"><strong>肩推</strong></td>
+  <td class="weight"><strong>硬舉</strong></td>
+</tr>
+
+
+
+                <tr>
+                    <td>70% x 3</td>
+                    <td class="weight" id="b8">...</td>
+                    <td class="weight" id="c8">...</td>
+                    <td class="weight" id="d8">...</td>
+                    <td class="weight" id="e8">...</td>
+                </tr>
+                <tr>
+                    <td>80% x 3</td>
+                    <td class="weight" id="b9">...</td>
+                    <td class="weight" id="c9">...</td>
+                    <td class="weight" id="d9">...</td>
+                    <td class="weight" id="e9">...</td>
+                </tr>
+                <tr>
+                    <td>90% x 3+</td>
+                    <td class="weight" id="b10">...</td>
+                    <td class="weight" id="c10">...</td>
+                    <td class="weight" id="d10">...</td>
+                    <td class="weight" id="e10">...</td>
+                </tr>
+                <tr class="week-header">
+                    <td colspan="5">Week 3 主訓練組 (kg)</td>
+                </tr>
+<tr>
+  <td><strong>項目標示</strong></td>
+  <td class="weight"><strong>握推</strong></td>
+  <td class="weight"><strong>深蹲</strong></td>
+  <td class="weight"><strong>肩推</strong></td>
+  <td class="weight"><strong>硬舉</strong></td>
+</tr>
+
+
+                <tr>
+                    <td>75% x 5</td>
+                    <td class="weight" id="b12">...</td>
+                    <td class="weight" id="c12">...</td>
+                    <td class="weight" id="d12">...</td>
+                    <td class="weight" id="e12">...</td>
+                </tr>
+                <tr>
+                    <td>85% x 3</td>
+                    <td class="weight" id="b13">...</td>
+                    <td class="weight" id="c13">...</td>
+                    <td class="weight" id="d13">...</td>
+                    <td class="weight" id="e13">...</td>
+                </tr>
+                <tr>
+                    <td>95% x 1+</td>
+                    <td class="weight" id="b14">...</td>
+                    <td class="weight" id="c14">...</td>
+                    <td class="weight" id="d14">...</td>
+                    <td class="weight" id="e14">...</td>
+                </tr>
+                <tr class="week-header">
+                    <td colspan="5">Week 4 降載週 (kg)</td>
+                </tr>
+<tr>
+  <td><strong>項目標示</strong></td>
+  <td class="weight"><strong>握推</strong></td>
+  <td class="weight"><strong>深蹲</strong></td>
+  <td class="weight"><strong>肩推</strong></td>
+  <td class="weight"><strong>硬舉</strong></td>
+</tr>
+
+                <tr>
+                    <td>40% x 5</td>
+                    <td class="weight" id="b16">...</td>
+                    <td class="weight" id="c16">...</td>
+                    <td class="weight" id="d16">...</td>
+                    <td class="weight" id="e16">...</td>
+                </tr>
+                <tr>
+                    <td>50% x 5</td>
+                    <td class="weight" id="b17">...</td>
+                    <td class="weight" id="c17">...</td>
+                    <td class="weight" id="d17">...</td>
+                    <td class="weight" id="e17">...</td>
+                </tr>
+                <tr>
+                    <td>60% x 5</td>
+                    <td class="weight" id="b18">...</td>
+                    <td class="weight" id="c18">...</td>
+                    <td class="weight" id="d18">...</td>
+                    <td class="weight" id="e18">...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // --- 1. 獲取所有需要的 HTML 元素 ---
+        const inputs = {
+            bench: document.getElementById('rm-bench'),
+            squat: document.getElementById('rm-squat'),
+            press: document.getElementById('rm-press'),
+            deadlift: document.getElementById('rm-deadlift'),
+            cycle: document.getElementById('cycle')
+        };
+
+        // 儲存所有輸出格子的 ID 和對應的百分比
+        const cells = [
+            // Week 1
+            { id: 'b4', lift: 'bench', p: 0.65 }, { id: 'c4', lift: 'squat', p: 0.65 }, { id: 'd4', lift: 'press', p: 0.65 }, { id: 'e4', lift: 'deadlift', p: 0.65 },
+            { id: 'b5', lift: 'bench', p: 0.75 }, { id: 'c5', lift: 'squat', p: 0.75 }, { id: 'd5', lift: 'press', p: 0.75 }, { id: 'e5', lift: 'deadlift', p: 0.75 },
+            { id: 'b6', lift: 'bench', p: 0.85 }, { id: 'c6', lift: 'squat', p: 0.85 }, { id: 'd6', lift: 'press', p: 0.85 }, { id: 'e6', lift: 'deadlift', p: 0.85 },
+            // Week 2
+            { id: 'b8', lift: 'bench', p: 0.70 }, { id: 'c8', lift: 'squat', p: 0.70 }, { id: 'd8', lift: 'press', p: 0.70 }, { id: 'e8', lift: 'deadlift', p: 0.70 },
+            { id: 'b9', lift: 'bench', p: 0.80 }, { id: 'c9', lift: 'squat', p: 0.80 }, { id: 'd9', lift: 'press', p: 0.80 }, { id: 'e9', lift: 'deadlift', p: 0.80 },
+            { id: 'b10', lift: 'bench', p: 0.90 }, { id: 'c10', lift: 'squat', p: 0.90 }, { id: 'd10', lift: 'press', p: 0.90 }, { id: 'e10', lift: 'deadlift', p: 0.90 },
+            // Week 3
+            { id: 'b12', lift: 'bench', p: 0.75 }, { id: 'c12', lift: 'squat', p: 0.75 }, { id: 'd12', lift: 'press', p: 0.75 }, { id: 'e12', lift: 'deadlift', p: 0.75 },
+            { id: 'b13', lift: 'bench', p: 0.85 }, { id: 'c13', lift: 'squat', p: 0.85 }, { id: 'd13', lift: 'press', p: 0.85 }, { id: 'e13', lift: 'deadlift', p: 0.85 },
+            { id: 'b14', lift: 'bench', p: 0.95 }, { id: 'c14', lift: 'squat', p: 0.95 }, { id: 'd14', lift: 'press', p: 0.95 }, { id: 'e14', lift: 'deadlift', p: 0.95 },
+            // Week 4
+            { id: 'b16', lift: 'bench', p: 0.40 }, { id: 'c16', lift: 'squat', p: 0.40 }, { id: 'd16', lift: 'press', p: 0.40 }, { id: 'e16', lift: 'deadlift', p: 0.40 },
+            { id: 'b17', lift: 'bench', p: 0.50 }, { id: 'c17', lift: 'squat', p: 0.50 }, { id: 'd17', lift: 'press', p: 0.50 }, { id: 'e17', lift: 'deadlift', p: 0.50 },
+            { id: 'b18', lift: 'bench', p: 0.60 }, { id: 'c18', lift: 'squat', p: 0.60 }, { id: 'd18', lift: 'press', p: 0.60 }, { id: 'e18', lift: 'deadlift', p: 0.60 }
+        ];
+
+        // --- 2. 核心計算邏輯 ---
+
+        /**
+         * 根據您的 CSV 檔案反推，您的計算似乎是四捨五入到 0.25
+         * @param {number} num - 原始數字
+         * @param {number} step - 要捨入的級距 (例如 0.25)
+         */
+        function roundTo(num, step = 0.25) {
+            return Math.round(num / step) * step;
+        }
+
+        /**
+         * 計算所有重量並更新表格，同時儲存輸入值
+         */
+        function calculateAndSave() {
+            // --- 1. 獲取 基礎RM 和 循環數 ---
+            const rms = {
+                bench: parseFloat(inputs.bench.value) || 0,
+                squat: parseFloat(inputs.squat.value) || 0,
+                press: parseFloat(inputs.press.value) || 0,
+                deadlift: parseFloat(inputs.deadlift.value) || 0
+            };
+            const cycle = parseInt(inputs.cycle.value) || 1;
+
+            // --- 2. 計算 基礎TM (第 1 循環的 TM) ---
+            const baseTms = {
+                bench: rms.bench * 0.9,
+                squat: rms.squat * 0.9,
+                press: rms.press * 0.9,
+                deadlift: rms.deadlift * 0.9
+            };
+
+            // --- 3. 根據循環數計算要增加的重量 ---
+            // (標準 5/3/1: 上肢+2.5kg, 下肢+5kg)
+            const upperBodyIncrement = 2.5; 
+            const lowerBodyIncrement = 5.0; 
+
+            // 計算 "要增加幾次" (第1循環+0次, 第2循環+1次, 第3循環+2次...)
+            const cycleIncrements = Math.max(0, cycle - 1);
+
+            // --- 4. 計算出「當前循環」的最終TM ---
+            const finalTms = {
+                bench: baseTms.bench + (cycleIncrements * upperBodyIncrement),
+                squat: baseTms.squat + (cycleIncrements * lowerBodyIncrement),
+                press: baseTms.press + (cycleIncrements * upperBodyIncrement),
+                deadlift: baseTms.deadlift + (cycleIncrements * lowerBodyIncrement)
+            };
+            
+            // --- 5. 更新表格 ---
+            cells.forEach(cellInfo => {
+                const tm = finalTms[cellInfo.lift]; // ★ 使用 finalTms
+                const percentage = cellInfo.p; // 獲取百分比
+                const calculatedWeight = tm * percentage;
+                
+                // 四捨五入到 0.25 (根據 CSV 分析)
+                const roundedWeight = roundTo(calculatedWeight, 0.25); 
+
+                // 更新 HTML 內容
+                document.getElementById(cellInfo.id).textContent = roundedWeight.toFixed(2);
+            });
+
+            // --- 6. 儲存到 Local Storage ---
+            // 我們只儲存 基礎RM 和 循環數，其他都是計算出來的
+            const dataToSave = {
+                rm_bench: rms.bench,
+                rm_squat: rms.squat,
+                rm_press: rms.press,
+                rm_deadlift: rms.deadlift,
+                cycle: cycle // 儲存當前的循環數
+            };
+            // 使用 JSON.stringify 將物件轉為字串儲存
+            localStorage.setItem('my531Calculator', JSON.stringify(dataToSave));
+        }
+
+        /**
+         * 載入儲存的資料 (如果有的話)
+         */
+        function loadData() {
+            const savedData = localStorage.getItem('my531Calculator');
+            
+            if (savedData) {
+                const data = JSON.parse(savedData);
+                // 載入儲存的 基礎RM 和 循環數
+                inputs.bench.value = data.rm_bench || 129.3;
+                inputs.squat.value = data.rm_squat || 49.7;
+                inputs.press.value = data.rm_press || 86.9;
+                inputs.deadlift.value = data.rm_deadlift || 99.3;
+                inputs.cycle.value = data.cycle || 1;
+            }
+            // 如果 "savedData" 是 null (第一次使用)，
+            // 欄位會自動使用 HTML 'value' 屬性中設定的預設值 (129.3, 49.7...)
+        }
+
+        // --- 3. 綁定事件 ---
+
+        // 當頁面載入完成時...
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData(); // 1. 嘗試載入儲存的資料
+            calculateAndSave(); // 2. 立即計算一次
+        });
+
+        // 當任何一個輸入框的內容被改變時，都重新計算並儲存
+        Object.values(inputs).forEach(inputElement => {
+            inputElement.addEventListener('input', calculateAndSave);
+        });
+
+    </script>
+</body>
+</html>
