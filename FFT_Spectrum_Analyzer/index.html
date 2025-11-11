@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFT 訊號分析</title>
+    <!-- 載入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 載入 D3.js 用於繪圖 -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        /* 使用 Inter 字體 */
+        :root {
+            font-family: 'Inter', sans-serif;
+        }
+        /* 隱藏 D3 軸線，只保留刻度 */
+        .axis path,
+        .axis line {
+            fill: none;
+            stroke: #cbd5e1; /* slate-300 */
+            shape-rendering: crispEdges;
+        }
+        /* D3 軸標籤樣式 */
+        .axis text {
+            fill: #475569; /* slate-600 */
+            font-size: 10px;
+        }
+        /* 懸停點樣式 */
+        .dot {
+            transition: r 0.1s ease, fill 0.1s ease; /* 讓大小和顏色變化更平滑 */
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen p-4 md:p-8">
+
+    <div id="app" class="max-w-4xl mx-auto">
+        <header class="text-center mb-6">
+            <h1 class="3xl font-bold text-gray-800">訊號快速傅立葉變換 (FFT) 分析儀</h1>
+            <p class="text-gray-500 mt-1">輸入訊號值和取樣間隔，即時觀看頻譜圖。</p>
+        </header>
+
+        <!-- 輸入控制區塊 -->
+        <div class="bg-white p-6 rounded-xl shadow-lg mb-6 border border-indigo-100">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- 訊號值輸入 -->
+                <div>
+                    <label for="signalInput" class="block text-sm font-medium text-gray-700 mb-2">訊號值 (以逗號分隔)</label>
+                    <textarea id="signalInput" rows="4" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-sm" placeholder="例如: 12, 36, 25, 14, 14, 10, 8, 5, 2, 1"></textarea>
+                    <p class="text-xs text-gray-500 mt-1">建議輸入 2 的冪次個數值 (如 8, 16, 32...)</p>
+                </div>
+                
+                <!-- 時間單位輸入 -->
+                <div class="space-y-4">
+                    <div>
+                        <label for="timeInterval" class="block text-sm font-medium text-gray-700 mb-2">取樣間隔 (Δt, 奈秒)</label>
+                        <input type="number" id="timeInterval" value="1000" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" placeholder="例如: 1000">
+                        <p class="text-xs text-gray-500 mt-1">Δt = <span id="dtDisplay">1000</span> ns, 總取樣頻率 (Fs) = <span id="fsDisplay">1.0</span> MHz</p>
+                    </div>
+
+                    <!-- 計算按鈕 -->
+                    <button id="calculateBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-150 ease-in-out shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                        計算 FFT 頻譜
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 輸出圖表區塊 -->
+        <div id="chartContainer" class="bg-white p-6 rounded-xl shadow-lg border border-indigo-100 min-h-[400px]">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">FFT 頻譜圖 (單邊振幅譜) - 支援滾輪縮放/拖曳平移</h2>
+            <div id="fftChart" class="w-full h-96">
+                <p id="chartMessage" class="text-center text-gray-400 mt-16">請輸入訊號並點擊計算按鈕。</p>
+                <!-- D3 圖表將會渲染在此 -->
+            </div>
+            
+            <!-- 錯誤/訊息提示 -->
+            <div id="errorMessage" class="hidden mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg" role="alert"></div>
+        </div>
+        
+        <!-- 懸停資訊浮動視窗 (Tooltip) -->
+        <div id="tooltip" class="absolute bg-gray-900 text-white p-2 rounded-lg shadow-xl pointer-events-none opacity-0 transition duration-100 z-50"></div>
+    </div>
+
+    <script>
+        // 設定全域變數
+        const chartContainer = document.getElementById('fftChart');
+        const signalInput = document.getElementById('signalInput');
+        const timeIntervalInput = document.getElementById('timeInterval');
+        const calculateBtn = document.getElementById('calculateBtn');
+        const errorMessage = document.getElementById('errorMessage');
+        const dtDisplay = document.getElementById('dtDisplay');
+        const fsDisplay = document.getElementById('fsDisplay');
+        const tooltip = document.getElementById('tooltip');
+        
+        // --- 1. D3 圖表設定 ---
+        const margin = { top: 20, right: 20, bottom: 50, left: 60 };
+        const getChartDimensions = () => {
+            const containerWidth = chartContainer.clientWidth;
+            const width = containerWidth - margin.left - margin.right;
+            const height = chartContainer.clientHeight - margin.top - margin.bottom;
+            return { width, height };
+        };
+
+        let svg; // 主 <g> 元素 (已包含邊界位移)
+        let chartWidth, chartHeight;
+        let baseXScale, baseYScale; // 基礎（未縮放/平移）的 D3 尺度 (Scale)
+
+        // Global scale domains to retain the original calculated scale range during window resize
+        let lastXScaleDomain = [0, 1]; 
+        let lastYScaleDomain = [0, 1];
+        
+        // 儲存當前的縮放/平移狀態 (初始為 Identity Transform)
+        let currentTransform = d3.zoomIdentity; 
+        
+        // 儲存當前繪圖數據，用於滑鼠事件查詢
+        let currentChartData = []; 
+
+        // --- 2. 複數運算與 FFT 演算法 (簡化版) ---
+        
+        /** 複數類別 */
+        class Complex {
+            constructor(re, im) {
+                this.re = re || 0;
+                this.im = im || 0;
+            }
+            magnitude() {
+                // 振幅 (Magnitude)
+                return Math.sqrt(this.re * this.re + this.im * this.im);
+            }
+            add(other) { return new Complex(this.re + other.re, this.im + other.im); }
+            sub(other) { return new Complex(this.re - other.re, this.im - other.im); }
+            mul(other) {
+                // 乘法: (a+bi)(c+di) = (ac-bd) + (ad+bc)i
+                return new Complex(
+                    this.re * other.re - this.im * other.im,
+                    this.re * other.im + this.im * other.re
+                );
+            }
+        }
+
+        /** * 快速傅立葉變換 (FFT) 遞迴實現 (Radix-2) */
+        function fft(x) {
+            const N = x.length;
+            if (N <= 1) return x;
+
+            const even = fft(x.filter((_, i) => i % 2 === 0));
+            const odd = fft(x.filter((_, i) => i % 2 !== 0));
+
+            const result = new Array(N);
+            for (let k = 0; k < N / 2; k++) {
+                const theta = -2 * Math.PI * k / N;
+                const W = new Complex(Math.cos(theta), Math.sin(theta));
+                
+                const t = W.mul(odd[k]);
+
+                result[k] = even[k].add(t);
+                result[k + N / 2] = even[k].sub(t);
+            }
+            return result;
+        }
+
+        // --- 3. D3 Zoom 處理函式 ---
+
+        // D3 Zoom 行為定義
+        const zoom = d3.zoom()
+            .scaleExtent([1, 10]) // 允許 1x 到 10x 縮放
+            .on("zoom", zoomed);
+
+        /**
+         * 處理 Zoom 事件：根據當前 Transform 重新繪製軸和資料
+         * @param {object} event - D3 zoom event object
+         */
+        function zoomed(event) {
+            if (!svg || d3.select(svg.node()).empty()) return;
+
+            // 儲存當前狀態
+            currentTransform = event.transform;
+
+            // 根據 Transform 調整尺度
+            const newX = currentTransform.rescaleX(baseXScale);
+            const newY = currentTransform.rescaleY(baseYScale);
+
+            // 1. 更新 X 軸
+            svg.select('.x-axis').call(d3.axisBottom(newX).ticks(10).tickFormat(d => {
+                if (d >= 1e6) return (d / 1e6).toFixed(1) + ' MHz';
+                if (d >= 1e3) return (d / 1e3).toFixed(1) + ' kHz';
+                return d.toFixed(0) + ' Hz';
+            }));
+            
+            // 2. 更新 Y 軸
+            svg.select('.y-axis').call(d3.axisLeft(newY).ticks(5).tickFormat(d3.format('.2f')));
+
+            // 3. 更新線條位置
+            const line = d3.line()
+                .x(d => newX(d.frequency))
+                .y(d => newY(d.amplitude))
+                .curve(d3.curveMonotoneX);
+
+            svg.select(".plot-line")
+                .attr("d", line);
+
+            // 4. 更新點的位置
+            svg.selectAll('.dot')
+                .attr('cx', d => newX(d.frequency))
+                .attr('cy', d => newY(d.amplitude));
+        }
+
+
+        // --- 4. 核心邏輯與事件處理 (更新後) ---
+
+        // 顯示錯誤訊息
+        function displayError(message) {
+            errorMessage.classList.remove('hidden');
+            errorMessage.textContent = message;
+            document.getElementById('chartMessage').textContent = '計算失敗。';
+            d3.select('#fftChart svg').remove();
+            svg = null;
+        }
+
+        // 清除錯誤訊息
+        function clearError() {
+            errorMessage.classList.add('hidden');
+            errorMessage.textContent = '';
+        }
+
+        // 更新 Fs 和 dt 顯示
+        function updateFsDisplay() {
+            const dt_ns = parseFloat(timeIntervalInput.value);
+            dtDisplay.textContent = dt_ns.toFixed(0);
+            if (dt_ns <= 0 || isNaN(dt_ns)) {
+                fsDisplay.textContent = 'N/A';
+                return;
+            }
+            const Fs = 1e9 / dt_ns;
+
+            if (Fs >= 1e6) {
+                fsDisplay.textContent = `${(Fs / 1e6).toFixed(3)} MHz`;
+            } else if (Fs >= 1e3) {
+                fsDisplay.textContent = `${(Fs / 1e3).toFixed(3)} kHz`;
+            } else {
+                fsDisplay.textContent = `${Fs.toFixed(3)} Hz`;
+            }
+        }
+        timeIntervalInput.addEventListener('input', updateFsDisplay);
+        updateFsDisplay(); // 初始化顯示
+
+        /** 執行 FFT 計算與繪圖 */
+        function calculateAndPlot() {
+            clearError();
+            
+            const dt_ns = parseFloat(timeIntervalInput.value);
+            const signalArray = signalInput.value
+                .split(',')
+                .map(s => parseFloat(s.trim()))
+                .filter(n => !isNaN(n));
+            
+            if (signalArray.length === 0) {
+                displayError('請輸入有效的訊號數值。');
+                return;
+            }
+            if (dt_ns <= 0 || isNaN(dt_ns)) {
+                displayError('取樣間隔 (奈秒) 必須是有效的正數。');
+                return;
+            }
+
+            let N = signalArray.length;
+            let P = 1;
+            while (P < N) { P *= 2; }
+            let paddedSignal = signalArray.map(v => new Complex(v, 0));
+            for (let i = N; i < P; i++) { paddedSignal.push(new Complex(0, 0)); }
+            N = P; 
+
+            const fftResult = fft(paddedSignal);
+
+            const dt_s = dt_ns * 1e-9;
+            const Fs = 1.0 / dt_s; 
+            
+            const spectrum = [];
+            for (let k = 0; k < N / 2; k++) { 
+                const magnitude = fftResult[k].magnitude();
+                const amplitude = (k === 0) ? magnitude / N : 2 * magnitude / N;
+                const frequency = k * Fs / N;
+
+                spectrum.push({
+                    frequency: frequency, 
+                    amplitude: amplitude,
+                    index: k
+                });
+            }
+            
+            // 重設 Transform 狀態，因為資料已更改
+            currentTransform = d3.zoomIdentity;
+            plotChart(spectrum, Fs);
+        }
+
+        /** 使用 D3 繪製頻譜圖 */
+        function plotChart(data, Fs) {
+            document.getElementById('chartMessage').textContent = '';
+
+            const { width, height } = getChartDimensions();
+            chartWidth = width;
+            chartHeight = height;
+            
+            // 儲存數據供滑鼠事件使用
+            currentChartData = data; 
+
+            // 清除舊圖表
+            d3.select('#fftChart svg').remove();
+
+            // 1. 創建主 SVG 容器
+            const mainSvg = d3.select('#fftChart').append('svg')
+                .attr('width', chartWidth + margin.left + margin.right)
+                .attr('height', chartHeight + margin.top + margin.bottom);
+
+            // 2. 創建主要的繪圖 <g> 元素 (包含邊界位移)
+            svg = mainSvg.append('g')
+                .attr('transform', `translate(${margin.left}, ${margin.top})`);
+
+            // 3. 定義基礎尺度 (未轉換)
+            baseXScale = d3.scaleLinear()
+                .domain([0, Fs / 2])
+                .range([0, chartWidth]);
+
+            lastXScaleDomain = baseXScale.domain(); 
+            
+            const yMax = d3.max(data, d => d.amplitude) * 1.1; 
+            baseYScale = d3.scaleLinear()
+                .domain([0, yMax > 0 ? yMax : 1]) 
+                .range([chartHeight, 0]);
+
+            lastYScaleDomain = baseYScale.domain(); 
+            
+            // 4. 繪製軸 (使用未轉換的基礎尺度，但 zoomed 函數會立即調用並更新)
+            svg.append('g')
+                .attr('class', 'axis x-axis')
+                .attr('transform', `translate(0, ${chartHeight})`)
+                .call(d3.axisBottom(baseXScale).ticks(10).tickFormat(d => {
+                    if (d >= 1e6) return (d / 1e6).toFixed(1) + ' MHz';
+                    if (d >= 1e3) return (d / 1e3).toFixed(1) + ' kHz';
+                    return d.toFixed(0) + ' Hz';
+                }));
+
+            svg.append('g')
+                .attr('class', 'axis y-axis')
+                .call(d3.axisLeft(baseYScale).ticks(5).tickFormat(d3.format('.2f')));
+
+            // 5. 新增剪裁路徑 (Clip Path) 以防止資料點超出邊界
+            svg.append("defs").append("clipPath")
+                .attr("id", "clip")
+                .append("rect")
+                .attr("width", chartWidth)
+                .attr("height", chartHeight);
+
+            // 6. 繪圖區域 (Plot Area) - 應用剪裁
+            const plotArea = svg.append("g")
+                .attr("clip-path", "url(#clip)")
+                .attr("class", "plot-area");
+
+            // 7. 繪製連接線 (使用 plotArea)
+            plotArea.append("path")
+                .datum(data)
+                .attr("class", "plot-line") 
+                .attr("fill", "none")
+                .attr("stroke", "#6366f1") // indigo-500
+                .attr("stroke-width", 2);
+
+            // 8. 繪製資料點 (使用 plotArea) - **移除單獨的事件處理**
+            plotArea.selectAll('.dot')
+                .data(data)
+                .enter().append('circle')
+                .attr('class', 'dot') 
+                .attr('fill', '#6366f1') // 基礎顏色
+                .attr('r', 4);
+            
+            // 9. 新增透明矩形來捕捉縮放/平移/滑鼠移動事件
+            svg.append("rect")
+                .attr("class", "zoom-rect")
+                .attr("width", chartWidth)
+                .attr("height", chartHeight)
+                .style("fill", "none")
+                .style("pointer-events", "all")
+                // 應用 Zoom 行為
+                .call(zoom) 
+                // 載入先前的 Transform 狀態
+                .call(zoom.transform, currentTransform)
+                // NEW: 添加滑鼠事件來處理 Tooltip
+                .on("mousemove", onChartMouseMove)
+                .on("mouseout", hideTooltip); 
+
+            // 10. 軸標籤 (在 Zoom Rect 之後，以確保在最上層)
+            svg.append('text')
+                .attr('class', 'text-gray-600 x-axis-label')
+                .attr('x', chartWidth / 2)
+                .attr('y', chartHeight + margin.bottom - 10)
+                .attr('text-anchor', 'middle')
+                .style('font-size', '12px')
+                .text('頻率 (Hz)');
+
+            svg.append('text')
+                .attr('class', 'text-gray-600 y-axis-label')
+                .attr('transform', 'rotate(-90)')
+                .attr('y', 0 - margin.left + 15)
+                .attr('x', 0 - (chartHeight / 2))
+                .attr('text-anchor', 'middle')
+                .style('font-size', '12px')
+                .text('振幅');
+
+            // 11. 繪製完成後，手動呼叫一次 zoomed 來應用初始或儲存的 Transform
+            zoomed({ transform: currentTransform, sourceEvent: null, target: null });
+        }
+        
+        /** * 處理圖表區域的滑鼠移動事件 (用於找出最近的點)
+         * @param {object} event - D3 mouse event object
+         */
+        function onChartMouseMove(event) {
+            if (!currentChartData || currentChartData.length === 0) return;
+
+            // D3 events (如 zoom 或 drag) 會將原生事件包裝在 'sourceEvent' 中。
+            // 對於直接的 'mousemove' 監聽器，原生事件即為 event 本身。
+            const clientEvent = event.sourceEvent || event;
+            
+            // 安全檢查：確保 clientX/Y 存在
+            if (typeof clientEvent.clientX === 'undefined' || typeof clientEvent.clientY === 'undefined') return;
+
+            // 獲取當前的 X 尺度 (已應用縮放)
+            const newX = currentTransform.rescaleX(baseXScale);
+            
+            // 獲取滑鼠在 chart 區域的 X 座標
+            // d3.pointer(event) 已經會給予相對座標
+            const [mx] = d3.pointer(event);
+            
+            // 將螢幕座標轉換回資料值 (頻率)
+            const invertedFreq = newX.invert(mx);
+            
+            // 找出距離滑鼠最近的資料點 (Nearest Neighbor)
+            const closestPoint = d3.least(currentChartData, d => Math.abs(d.frequency - invertedFreq));
+            
+            if (closestPoint) {
+                // 找到對應的 SVG 點元素
+                const dotElement = svg.selectAll('.dot').filter(d => d === closestPoint);
+                
+                // 1. 高亮最近的點 (重置所有點，然後高亮一個)
+                svg.selectAll('.dot')
+                   .attr('r', 4)
+                   .attr('fill', '#6366f1'); // Reset to indigo-500
+                   
+                dotElement.attr('r', 6).attr('fill', '#ef4444'); // Highlight (red-500)
+
+                // 2. 顯示 Tooltip
+                showTooltipFromClientCoords(clientEvent.clientX, clientEvent.clientY, closestPoint);
+            }
+        }
+
+
+        /** * 顯示 Tooltip (從滑鼠 client 座標和數據點觸發)
+         */
+        function showTooltipFromClientCoords(clientX, clientY, d) {
+            let freqText;
+            if (d.frequency >= 1e6) {
+                freqText = `${(d.frequency / 1e6).toFixed(3)} MHz`;
+            } else if (d.frequency >= 1e3) {
+                freqText = `${(d.frequency / 1e3).toFixed(3)} kHz`;
+            } else {
+                freqText = `${d.frequency.toFixed(3)} Hz`;
+            }
+            
+            tooltip.innerHTML = `
+                <p class="font-bold text-indigo-300">頻率 (${d.index})</p>
+                <p class="text-sm">頻率: <span class="font-semibold">${freqText}</span></p>
+                <p class="text-sm">振幅: <span class="font-semibold">${d.amplitude.toFixed(4)}</span></p>
+            `;
+            
+            const xPos = clientX + 10;
+            const yPos = clientY - tooltip.offsetHeight - 10;
+
+            // 避免超出邊界
+            tooltip.style.left = `${xPos + tooltip.offsetWidth > window.innerWidth - 10 ? xPos - tooltip.offsetWidth - 20 : xPos}px`;
+            tooltip.style.top = `${yPos < 0 ? clientY + 20 : yPos}px`;
+            tooltip.style.opacity = 1;
+        }
+
+        /** * 隱藏 Tooltip
+         */
+        function hideTooltip() {
+            // 檢查 svg 是否已初始化，防止在未繪製圖表時調用
+            if (svg) {
+                tooltip.style.opacity = 0;
+                // 重置所有點的樣式
+                svg.selectAll('.dot')
+                    .attr('r', 4)
+                    .attr('fill', '#6366f1'); // Reset to indigo-500
+            }
+        }
+
+        // 綁定事件
+        calculateBtn.addEventListener('click', calculateAndPlot);
+
+        // --- 5. Debounce 函式用於穩定 Resize 事件 (更新) ---
+        function debounce(func, timeout = 200) {
+            let timer;
+            return (...args) => {
+                clearTimeout(timer);
+                timer = setTimeout(() => { func.apply(this, args); }, timeout);
+            };
+        }
+
+        // 響應式調整圖表大小 (使用 debounce 避免頻繁重繪)
+        const debouncedResize = debounce(() => {
+            if (!svg || d3.select(svg.node()).empty()) return; // 再次檢查 SVG 是否存在
+
+            const { width, height } = getChartDimensions();
+            chartWidth = width;
+            chartHeight = height;
+                
+            // 重新設置 SVG 和 G 元素的大小
+            const mainSvg = d3.select('#fftChart svg');
+            mainSvg.attr('width', chartWidth + margin.left + margin.right)
+                   .attr('height', chartHeight + margin.top + margin.bottom);
+            
+            // 重新計算未轉換的基礎尺度 (範圍更新)
+            baseXScale = d3.scaleLinear()
+                .domain(lastXScaleDomain)
+                .range([0, chartWidth]);
+
+            baseYScale = d3.scaleLinear()
+                .domain(lastYScaleDomain)
+                .range([chartHeight, 0]);
+
+            // 更新剪裁路徑大小
+            svg.select('#clip rect')
+                .attr("width", chartWidth)
+                .attr("height", chartHeight);
+
+            // 更新 Zoom 矩形大小並重新套用 Transform
+            const zoomRect = svg.select('.zoom-rect');
+            if (!zoomRect.empty()) {
+                 zoomRect
+                    .attr("width", chartWidth)
+                    .attr("height", chartHeight)
+                    .call(zoom.scaleExtent([1, 10]))
+                    .call(zoom.transform, currentTransform); // 重新應用 Transform
+            }
+            
+            // 手動呼叫 zoomed 來重新繪製軸和資料（使用 currentTransform 和新尺寸）
+            zoomed({ transform: currentTransform, sourceEvent: null, target: null });
+            
+            // 更新 X 軸標籤位置
+            const xAxisLabel = svg.select('.x-axis-label');
+            if (!xAxisLabel.empty()) {
+                xAxisLabel
+                    .attr('x', chartWidth / 2)
+                    .attr('y', chartHeight + margin.bottom - 10);
+            }
+            
+            // 更新 Y 軸標籤位置
+            const yAxisLabel = svg.select('.y-axis-label');
+            if (!yAxisLabel.empty()) {
+                yAxisLabel
+                    .attr('x', 0 - (chartHeight / 2)); 
+            }
+        }, 200); // 200ms 防抖時間
+
+        window.addEventListener('resize', debouncedResize);
+
+
+        // 頁面加載時自動填入範例數據並計算一次
+        window.onload = () => {
+             // 範例資料 (與之前相同)
+             const N_demo = 16;
+             const dt_ns_demo = 1000;
+             const f_signal = 125000; // 125 kHz
+             const signal_data = Array.from({ length: N_demo }, (_, i) => {
+                 const t = i * (dt_ns_demo * 1e-9);
+                 const value = 50 * Math.sin(2 * Math.PI * f_signal * t) + 5 * (Math.random() - 0.5);
+                 return Math.round(value * 100) / 100;
+             });
+             
+             signalInput.value = signal_data.join(', ');
+             timeIntervalInput.value = dt_ns_demo;
+             
+             updateFsDisplay();
+             calculateAndPlot();
+        };
+
+    </script>
+</body>
+</html>
