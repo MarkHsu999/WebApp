@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>金門浪漫雙人行</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 React 和 ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- 引入 Babel 用於解析 JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fadeIn {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="bg-slate-50">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState } = React;
+
+        // 簡易圖示組件 (替代 lucide-react，為了方便單檔運作)
+        const Icons = {
+            Plane: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12h20"/><path d="M13 2l9 10-9 10"/><path d="M13 12L2 2"/><path d="M13 12L2 22"/></svg>, // 簡化替代
+            MapPin: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>,
+            Clock: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+            Navigation: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>,
+            Sun: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>,
+            Moon: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>,
+            Coffee: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" x2="6" y1="2" y2="4"/><line x1="10" x2="10" y1="2" y2="4"/><line x1="14" x2="14" y1="2" y2="4"/></svg>,
+            Car: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/><path d="M16 17h-6"/></svg>,
+            Bike: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/></svg>,
+            Menu: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>,
+            X: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>,
+            Map: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" x2="9" y1="3" y2="18"/><line x1="15" x2="15" y1="6" y2="21"/></svg>,
+            Utensils: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>
+        };
+
+        const TripPlanner = () => {
+            const [activeTab, setActiveTab] = useState('day1');
+            const [showMenu, setShowMenu] = useState(false);
+
+            // Flight Data
+            const flights = {
+                outbound: {
+                date: '2026/04/11 (六)',
+                route: '台南 (TNN) → 金門 (KNH)',
+                time: '09:40 - 10:30',
+                flight: '立榮 B7-8981 (AT7)'
+                },
+                inbound: {
+                date: '2026/04/13 (一)',
+                route: '金門 (KNH) → 台南 (TNN)',
+                time: '14:30 - 15:25',
+                flight: '立榮 B7-8986 (AT7)'
+                }
+            };
+
+            // Hotel Data
+            const hotel = {
+                name: '海福花園飯店',
+                address: '金門縣金沙鎮高陽路1號',
+                note: '含早餐，位於金沙鎮，環境清幽'
+            };
+
+            // Rental Data
+            const rentalInfo = {
+                vendor: "金豐租車 (建議)",
+                location: "金門尚義機場店 (取還車最方便)",
+                contact: "082-371888",
+                schedule: [
+                { day: "4/11", type: "機車 (125cc)", price: "$400-500/天", note: "機場取車，雙載漫遊市區" },
+                { day: "4/12", type: "汽車 (Vios/Yaris)", price: "$1600-1800/天", note: "機場換車，舒適前往較遠景點，車內可放更多合照裝備" },
+                { day: "4/13", type: "機車 (125cc)", price: "$200-250/半天", note: "機場換車，跑最後行程後直接還車登機" }
+                ],
+                tips: "強烈建議事先網上預約。由於您的交通工具頻繁更換，建議都在『機場店』處理，雖然需要往返飯店與機場，但這是最保險且車源最足的方式。"
+            };
+
+            // Itinerary Data
+            const itinerary = {
+                day1: {
+                date: '4/11 (六)',
+                transport: '機車 🛵',
+                focus: '金城鎮古蹟漫步 & 戰地夕陽',
+                schedule: [
+                    { time: '10:30', title: '抵達金門尚義機場', desc: '提領行李，前往租車櫃台取機車', icon: <Icons.Plane className="w-4 h-4" /> },
+                    { 
+                    time: '11:30', 
+                    title: '午餐：金城老街', 
+                    desc: '推薦：永春廣東粥 (約$80) 或 牛家莊(全牛大餐，適合兩人分食)', 
+                    loc: '金城鎮', 
+                    dur: '1.5hr', 
+                    type: 'food',
+                    cost: '約 $100-400 /人'
+                    },
+                    { time: '13:00', title: '莒光樓', desc: '金門地標，登高肩並肩眺望廈門，適合合影留念。', loc: '莒光樓', dur: '40min', type: 'spot' },
+                    { time: '14:00', title: '翟山坑道', desc: 'A字型戰備水道，花崗岩開鑿的鬼斧神工。坑道內水面倒影絕美，氣氛神祕幽靜，非常適合拍出質感大片。', loc: '翟山坑道', dur: '1hr', type: 'spot' },
+                    { time: '15:30', title: '歐厝沙灘 (沉睡戰車)', desc: '退潮時可見被埋在沙灘上的M18戰車。傍晚時分光線柔和，有一種世界盡頭的浪漫感，適合牽手散步。', loc: '歐厝沙灘', dur: '1hr', type: 'spot' },
+                    { time: '17:00', title: '前往飯店 Check-in', desc: '騎車前往金沙鎮海福花園飯店 (路程約 25-30分)', icon: <Icons.Moon className="w-4 h-4" /> },
+                    { 
+                    time: '18:30', 
+                    title: '晚餐：沙美老街周邊', 
+                    desc: '推薦：復興麵店 或 遠來興小吃 (閩式燒餅當點心)', 
+                    loc: '沙美老街', 
+                    dur: '1.5hr', 
+                    type: 'food',
+                    cost: '約 $100-200 /人'
+                    }
+                ]
+                },
+                day2: {
+                date: '4/12 (日)',
+                transport: '汽車 🚗',
+                focus: '金沙/金湖深度遊 & 復古風情',
+                schedule: [
+                    { time: '09:00', title: '飯店早餐 & 退房準備', desc: '悠閒享用早餐', icon: <Icons.Coffee className="w-4 h-4" /> },
+                    { time: '10:00', title: '交通轉換', desc: '騎機車回機場換租汽車 (順便寄放採買的伴手禮在車上)', icon: <Icons.Car className="w-4 h-4" /> },
+                    { time: '11:00', title: '山后民俗文化村', desc: '完整的閩南二落大厝聚落，古色古香的紅磚牆，穿梭巷弄間能拍出很有味道的復古情侶照。', loc: '山后民俗文化村', dur: '1hr', type: 'spot' },
+                    { 
+                    time: '12:30', 
+                    title: '午餐：王阿婆小吃店', 
+                    desc: '位於文化村內，必吃蚵仔煎、蚵仔麵線。', 
+                    loc: '王阿婆小吃店', 
+                    dur: '1hr', 
+                    type: 'food',
+                    cost: '約 $100-150 /人'
+                    },
+                    { time: '13:30', title: '獅山砲陣地', desc: '必看！全台唯一坑道式榴彈砲陣地，有砲操表演 (通常為13:30或14:30，需確認當季時間)。', loc: '獅山砲陣地', dur: '1hr', type: 'spot' },
+                    { time: '15:00', title: '陳景蘭洋樓', desc: '金門規模最大的洋樓，純白拱門迴廊配上海景，在此喝杯咖啡、吹吹海風非常愜意浪漫。', loc: '陳景蘭洋樓', dur: '1hr', type: 'spot' },
+                    { time: '16:30', title: '特約茶室展示館', desc: '電影《軍中樂園》場景，環境清幽，綠樹成蔭。', loc: '特約茶室展示館', dur: '40min', type: 'spot' },
+                    { 
+                    time: '18:00', 
+                    title: '晚餐：昇恆昌/金湖廣場周邊', 
+                    desc: '選擇較多，方便停車。想吃好一點可選擇廣場內餐廳。', 
+                    loc: '昇恆昌金湖廣場', 
+                    dur: '1.5hr', 
+                    type: 'food',
+                    cost: '約 $300-600 /人'
+                    }
+                ]
+                },
+                day3: {
+                date: '4/13 (一)',
+                transport: '機車 🛵',
+                focus: '古寧頭戰役 & 最後採買',
+                schedule: [
+                    { time: '09:00', title: '交通轉換', desc: '開車至機場換回機車 (行李可先寄放機場置物櫃或車行)。', icon: <Icons.Bike className="w-4 h-4" /> },
+                    { time: '09:40', title: '古寧頭戰史館', desc: '在此緬懷戰役歷史，周邊有播音牆可遙望對岸。', loc: '古寧頭戰史館', dur: '1hr', type: 'spot' },
+                    { time: '11:00', title: '北山播音牆', desc: '特殊的蜂巢式造型，鄧麗君心戰喊話的地點。', loc: '北山播音牆', dur: '30min', type: 'spot' },
+                    { 
+                    time: '12:00', 
+                    title: '午餐 & 伴手禮', 
+                    desc: '金合利鋼刀、貢糖、牛肉乾採買。推薦：金城周邊解決。', 
+                    loc: '金城老街', 
+                    dur: '1.5hr', 
+                    type: 'shop',
+                    cost: '餐費約 $150，伴手禮另計'
+                    },
+                    { time: '13:30', title: '機場還車 & 報到', desc: '整理行李，準備搭機', icon: <Icons.Plane className="w-4 h-4" /> },
+                    { time: '14:30', title: '起飛返台南', desc: '帶著回憶回家', icon: <Icons.Plane className="w-4 h-4" /> }
+                ]
+                }
+            };
+
+            const openMap = (location) => {
+                const query = encodeURIComponent(`金門 ${location}`);
+                window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank');
+            };
+
+            return (
+                <div className="min-h-screen font-sans text-slate-800 pb-12">
+                {/* Mobile Header */}
+                <header className="sticky top-0 z-50 bg-blue-900 text-white shadow-lg">
+                    <div className="container mx-auto px-4 h-14 flex items-center justify-between">
+                    <h1 className="text-lg font-bold flex items-center">
+                        <Icons.Map className="mr-2" /> 金門浪漫雙人行
+                    </h1>
+                    <button onClick={() => setShowMenu(!showMenu)} className="md:hidden p-2">
+                        {showMenu ? <Icons.X /> : <Icons.Menu />}
+                    </button>
+                    
+                    {/* Desktop Nav */}
+                    <nav className="hidden md:flex space-x-6 text-sm">
+                        {['day1', 'day2', 'day3', 'info'].map(tab => (
+                        <button 
+                            key={tab}
+                            onClick={() => setActiveTab(tab)}
+                            className={`uppercase tracking-wide px-3 py-1 rounded transition ${activeTab === tab ? 'bg-white text-blue-900 font-bold' : 'hover:bg-blue-800'}`}
+                        >
+                            {tab === 'info' ? '租車資訊' : tab.toUpperCase()}
+                        </button>
+                        ))}
+                    </nav>
+                    </div>
+                    
+                    {/* Mobile Menu */}
+                    {showMenu && (
+                    <div className="md:hidden bg-blue-800 p-4 absolute w-full shadow-xl">
+                        {['day1', 'day2', 'day3', 'info'].map(tab => (
+                        <button 
+                            key={tab}
+                            onClick={() => { setActiveTab(tab); setShowMenu(false); }}
+                            className={`block w-full text-left py-3 px-4 mb-2 rounded ${activeTab === tab ? 'bg-white text-blue-900 font-bold' : 'text-white'}`}
+                        >
+                            {tab === 'info' ? 'ℹ️ 租車與住宿' : 
+                            tab === 'day1' ? '📅 4/11 (機車)' : 
+                            tab === 'day2' ? '📅 4/12 (汽車)' : '📅 4/13 (機車)'}
+                        </button>
+                        ))}
+                    </div>
+                    )}
+                </header>
+
+                {/* Main Content */}
+                <main className="container mx-auto px-4 py-6 max-w-2xl">
+                    
+                    {/* Flight Summary Card */}
+                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6">
+                    <div className="flex justify-between items-center mb-4 pb-2 border-b border-slate-100">
+                        <h2 className="font-bold text-slate-700 flex items-center">
+                        <Icons.Plane className="w-5 h-5 mr-2 text-blue-600" /> 航班資訊
+                        </h2>
+                        <span className="text-xs bg-pink-100 text-pink-800 px-2 py-1 rounded-full">情侶專屬行程</span>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <div className="flex items-start">
+                        <div className="bg-blue-50 p-2 rounded mr-3">
+                            <span className="font-bold text-blue-700">去</span>
+                        </div>
+                        <div>
+                            <p className="font-semibold">{flights.outbound.date}</p>
+                            <p className="text-slate-500">{flights.outbound.route}</p>
+                            <p className="text-slate-600">{flights.outbound.time} | {flights.outbound.flight}</p>
+                        </div>
+                        </div>
+                        <div className="flex items-start">
+                        <div className="bg-orange-50 p-2 rounded mr-3">
+                            <span className="font-bold text-orange-700">回</span>
+                        </div>
+                        <div>
+                            <p className="font-semibold">{flights.inbound.date}</p>
+                            <p className="text-slate-500">{flights.inbound.route}</p>
+                            <p className="text-slate-600">{flights.inbound.time} | {flights.inbound.flight}</p>
+                        </div>
+                        </div>
+                    </div>
+                    </div>
+
+                    {/* Tab Content */}
+                    {activeTab === 'info' ? (
+                    <div className="space-y-6 animate-fadeIn">
+                        <div className="bg-white rounded-xl shadow-md overflow-hidden">
+                        <div className="bg-emerald-600 p-4 text-white">
+                            <h3 className="font-bold text-lg flex items-center"><Icons.Car className="mr-2"/> 租車規劃</h3>
+                        </div>
+                        <div className="p-5">
+                            <div className="mb-4">
+                            <h4 className="font-bold text-slate-800 mb-2">建議廠商：{rentalInfo.vendor}</h4>
+                            <p className="text-sm text-slate-600 mb-1">📍 取還地點：{rentalInfo.location}</p>
+                            <p className="text-sm text-slate-600">📞 聯絡電話：{rentalInfo.contact}</p>
+                            </div>
+                            <div className="space-y-3">
+                            {rentalInfo.schedule.map((item, idx) => (
+                                <div key={idx} className="flex items-center p-3 bg-slate-50 rounded-lg border border-slate-100">
+                                <div className="w-12 text-center font-bold text-emerald-600 text-sm mr-3">{item.day}</div>
+                                <div className="flex-1">
+                                    <div className="font-semibold text-slate-800">{item.type}</div>
+                                    <div className="text-xs text-slate-500">{item.note}</div>
+                                </div>
+                                <div className="text-sm font-bold text-slate-600">{item.price}</div>
+                                </div>
+                            ))}
+                            </div>
+                            <div className="mt-4 p-3 bg-yellow-50 text-yellow-800 text-sm rounded border border-yellow-200">
+                            <strong>💡 小撇步：</strong> {rentalInfo.tips}
+                            </div>
+                        </div>
+                        </div>
+
+                        <div className="bg-white rounded-xl shadow-md overflow-hidden">
+                        <div className="bg-indigo-600 p-4 text-white">
+                            <h3 className="font-bold text-lg flex items-center"><Icons.Moon className="mr-2"/> 住宿資訊</h3>
+                        </div>
+                        <div className="p-5">
+                            <h4 className="font-bold text-lg mb-1">{hotel.name}</h4>
+                            <p className="text-slate-600 flex items-center mb-2" onClick={() => openMap(hotel.name)}>
+                            <Icons.MapPin className="w-4 h-4 mr-1" /> {hotel.address}
+                            </p>
+                            <p className="text-sm text-slate-500 bg-indigo-50 p-2 rounded inline-block">
+                            {hotel.note}
+                            </p>
+                            {/* Hotel Map */}
+                            <div className="mt-3 w-full h-48 bg-slate-100 rounded-lg overflow-hidden border border-slate-200">
+                            <iframe
+                                title="Hotel Map"
+                                width="100%"
+                                height="100%"
+                                frameBorder="0"
+                                scrolling="no"
+                                marginHeight="0"
+                                marginWidth="0"
+                                src={`https://maps.google.com/maps?q=${encodeURIComponent(hotel.name)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+                                loading="lazy"
+                            ></iframe>
+                            </div>
+                        </div>
+                        </div>
+                    </div>
+                    ) : (
+                    <div className="space-y-4 animate-fadeIn">
+                        {/* Day Header */}
+                        <div className="bg-gradient-to-r from-blue-600 to-blue-500 rounded-xl p-6 text-white shadow-lg">
+                        <div className="flex justify-between items-end">
+                            <div>
+                            <h2 className="text-2xl font-bold mb-1">{itinerary[activeTab].date}</h2>
+                            <p className="text-blue-100 text-sm flex items-center">
+                                本日交通：<span className="font-bold bg-white/20 px-2 py-0.5 rounded ml-1">{itinerary[activeTab].transport}</span>
+                            </p>
+                            </div>
+                            <div className="text-right">
+                            <div className="text-xs text-blue-200 uppercase tracking-widest">Theme</div>
+                            <div className="font-semibold">{itinerary[activeTab].focus}</div>
+                            </div>
+                        </div>
+                        </div>
+
+                        {/* Timeline */}
+                        <div className="relative pl-4">
+                        {/* Vertical Line */}
+                        <div className="absolute left-[27px] top-4 bottom-4 w-0.5 bg-slate-200"></div>
+
+                        {itinerary[activeTab].schedule.map((item, idx) => (
+                            <div key={idx} className="relative flex items-start mb-6 group">
+                            {/* Icon Bubble */}
+                            <div className={`
+                                absolute left-0 w-14 h-14 rounded-full border-4 border-slate-50 flex items-center justify-center z-10 shadow-sm
+                                ${item.type === 'food' ? 'bg-orange-100 text-orange-600' : 
+                                item.type === 'spot' ? 'bg-blue-100 text-blue-600' : 
+                                item.type === 'shop' ? 'bg-pink-100 text-pink-600' :
+                                'bg-slate-100 text-slate-600'}
+                            `}>
+                                <div className="text-center">
+                                <div className="text-[10px] font-bold leading-none mb-0.5">{item.time.split(':')[0]}</div>
+                                <div className="text-[10px] leading-none">{item.time.split(':')[1]}</div>
+                                </div>
+                            </div>
+
+                            {/* Content Card */}
+                            <div className="ml-16 flex-1 bg-white rounded-lg p-4 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+                                <div className="flex justify-between items-start mb-1">
+                                <h3 className="font-bold text-slate-800">{item.title}</h3>
+                                {item.dur && (
+                                    <span className="text-xs text-slate-400 flex items-center bg-slate-50 px-2 py-1 rounded">
+                                    <Icons.Clock className="w-3 h-3 mr-1" /> {item.dur}
+                                    </span>
+                                )}
+                                </div>
+                                
+                                <p className="text-sm text-slate-600 mb-3">{item.desc}</p>
+                                
+                                {/* Cost Section */}
+                                {item.cost && (
+                                <div className="flex items-center text-sm text-orange-600 bg-orange-50 p-2 rounded mb-2">
+                                    <Icons.Utensils className="w-4 h-4 mr-2" />
+                                    <span className="font-medium">預算：{item.cost}</span>
+                                </div>
+                                )}
+
+                                <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-50">
+                                <div className="flex items-center text-xs text-slate-400">
+                                    {item.loc && <><Icons.MapPin className="w-3 h-3 mr-1" /> {item.loc}</>}
+                                </div>
+                                
+                                {item.loc && (
+                                    <button 
+                                    onClick={() => openMap(item.title)}
+                                    className="text-xs bg-blue-50 text-blue-600 px-3 py-1.5 rounded-full font-medium hover:bg-blue-100 flex items-center"
+                                    >
+                                    <Icons.Navigation className="w-3 h-3 mr-1" /> 導航
+                                    </button>
+                                )}
+                                </div>
+
+                                {/* Embedded Map */}
+                                {item.loc && (
+                                <div className="mt-3 w-full h-48 bg-slate-100 rounded-lg overflow-hidden border border-slate-200">
+                                    <iframe
+                                    title={`Map of ${item.title}`}
+                                    width="100%"
+                                    height="100%"
+                                    frameBorder="0"
+                                    scrolling="no"
+                                    marginHeight="0"
+                                    marginWidth="0"
+                                    src={`https://maps.google.com/maps?q=${encodeURIComponent("金門 " + item.title)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+                                    loading="lazy"
+                                    ></iframe>
+                                </div>
+                                )}
+                            </div>
+                            </div>
+                        ))}
+                        </div>
+                    </div>
+                    )}
+                </main>
+
+                {/* Footer */}
+                <footer className="bg-slate-800 text-slate-400 text-center py-6 text-sm mt-8">
+                    <p>祝旅途愉快！</p>
+                    <p className="text-xs mt-1">建議出發前再次確認店家營業時間</p>
+                </footer>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<TripPlanner />);
+    </script>
+</body>
+</html>
