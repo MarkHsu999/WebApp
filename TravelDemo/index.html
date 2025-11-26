@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>北海道冬季滑雪暨城市觀光自由行</title>
+    
+    <!-- 引入 React 與 ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- 引入 Babel 用於解析 JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- 引入 Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <!-- 自定義樣式 -->
+    <style>
+        body { font-family: 'Zen Maru Gothic', sans-serif; }
+        
+        .paper-texture {
+          background-image: radial-gradient(#E5E5E5 1px, transparent 1px);
+          background-size: 20px 20px;
+        }
+        
+        .handwritten-border {
+          border-radius: 2px 255px 3px 25px / 255px 5px 225px 3px;
+        }
+
+        .animate-spin-slow {
+            animation: spin 3s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes fall {
+            0% { transform: translateY(-10px) translateX(0px); }
+            50% { transform: translateY(50vh) translateX(20px); }
+            100% { transform: translateY(105vh) translateX(-20px); }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- 圖標元件定義 (替代 lucide-react) ---
+        const IconBase = ({ children, className, ...props }) => (
+            <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                width="24" height="24" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                className={className} 
+                {...props}
+            >
+                {children}
+            </svg>
+        );
+
+        const Plane = (props) => <IconBase {...props}><path d="M2 12h20"/><path d="M13 2l9 10-9 10"/><path d="M2 12l5-5m-5 5l5 5"/></IconBase>; // 簡化為箭頭飛機意象，或是使用更像飛機的路徑
+        const PlaneReal = (props) => <IconBase {...props}><path d="M2 22h20"/><path d="M22 2l-10 10-10-10"/><path d="M2 2l20 20"/></IconBase>; // 修正為更像飛機的
+        // 為了確保美觀，這裡使用標準 SVG 路徑
+        const Icons = {
+            Plane: (props) => <IconBase {...props}><path d="M2 12h20"/><path d="M13 2l9 10-9 10"/><path d="M2 12l5-5m-5 5l5 5"/></IconBase>, // 示意
+            Train: (props) => <IconBase {...props}><rect width="16" height="16" x="4" y="4" rx="2"/><path d="M4 11h16"/><path d="M12 4v16"/><path d="m8 8 8 8"/><path d="m16 8-8 8"/></IconBase>, // 示意
+            // 改用更精確的路徑
+            RealPlane: (props) => <IconBase {...props}><path d="M20.67 6.34 18 3.67a1.33 1.33 0 0 0-1.89 0l-1.44 1.44L8 3.33a2 2 0 0 0-2.83 2.83l1.78 6.67L3.33 16.5a1.33 1.33 0 0 0 0 1.89l.86.85a1.33 1.33 0 0 0 1.89 0L9.75 15.6l6.67 1.78A2 2 0 0 0 19.25 14.5l1.42-6.67 1.44-1.44a1.33 1.33 0 0 0 0-1.89Z"/></IconBase>,
+            RealTrain: (props) => <IconBase {...props}><rect width="16" height="16" x="4" y="3" rx="2"/><path d="M4 11h16"/><path d="M12 3v8"/><path d="m8 19-2 3"/><path d="m18 22-2-3"/><circle cx="8" cy="15" r="1"/><circle cx="16" cy="15" r="1"/></IconBase>,
+            MapPin: (props) => <IconBase {...props}><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></IconBase>,
+            Utensils: (props) => <IconBase {...props}><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></IconBase>,
+            Camera: (props) => <IconBase {...props}><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></IconBase>,
+            Snowflake: (props) => <IconBase {...props}><line x1="2" x2="22" y1="12" y2="12"/><line x1="12" x2="12" y1="2" y2="22"/><path d="m20 20-5-5"/><path d="m4 4 5 5"/><path d="m4 20 5-5"/><path d="m20 4-5 5"/></IconBase>,
+            Hotel: (props) => <IconBase {...props}><path d="M18 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2Z"/><polyline points="7 22 7 15 17 15 17 22"/><circle cx="12" cy="9" r="2"/></IconBase>,
+            Users: (props) => <IconBase {...props}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></IconBase>,
+            Calendar: (props) => <IconBase {...props}><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></IconBase>,
+            Coffee: (props) => <IconBase {...props}><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" x2="6" y1="1" y2="4"/><line x1="10" x2="10" y1="1" y2="4"/><line x1="14" x2="14" y1="1" y2="4"/></IconBase>,
+            Mountain: (props) => <IconBase {...props}><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></IconBase>,
+            ShoppingBag: (props) => <IconBase {...props}><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></IconBase>,
+            ArrowDown: (props) => <IconBase {...props}><line x1="12" x2="12" y1="5" y2="19"/><polyline points="19 12 12 19 5 12"/></IconBase>
+        };
+
+        const ItineraryApp = () => {
+            const [activeDay, setActiveDay] = useState(null);
+
+            // 飄雪效果邏輯
+            const [snowflakes, setSnowflakes] = useState([]);
+            useEffect(() => {
+                const flakes = Array.from({ length: 30 }).map((_, i) => ({
+                id: i,
+                left: Math.random() * 100,
+                animationDuration: Math.random() * 5 + 5,
+                delay: Math.random() * 5,
+                opacity: Math.random() * 0.5 + 0.3,
+                }));
+                setSnowflakes(flakes);
+            }, []);
+
+            const members = ["咻咻咻", "Peggy女神", "秉毅", "瑀晅"];
+
+            const itinerary = [
+                {
+                day: "Day 0",
+                date: "1/22 (四)",
+                title: "旅程序章・啟程",
+                location: "台南 ➔ 桃園",
+                stay: "桃園機場假日酒店",
+                color: "bg-slate-600",
+                icon: <Icons.RealTrain className="w-6 h-6 text-white" />,
+                details: [
+                    { type: "transport", text: "晚上從台南搭乘高鐵前往桃園", sub: "高鐵 / 捷運" },
+                    { type: "hotel", text: "入住機場飯店，養精蓄銳", sub: "Holiday Inn Express" }
+                ],
+                food: [],
+                visualPrompt: "夜晚的高鐵列車飛馳，車窗映著倒影 / 飯店溫暖的燈光"
+                },
+                {
+                day: "Day 1",
+                date: "1/23 (五)",
+                title: "初見雪國・札幌",
+                location: "桃園 ➔ 新千歲 ➔ 札幌",
+                stay: "MYSTAYS 札幌公園精品酒店",
+                color: "bg-blue-500",
+                icon: <Icons.RealPlane className="w-6 h-6 text-white" />,
+                details: [
+                    { type: "transport", text: "飛往北海道新千歲機場", sub: "飛機" },
+                    { type: "activity", text: "領取周遊券 & Check In", sub: "JR 外籍旅客服務處" },
+                    { type: "activity", text: "狸小路商店街漫步", sub: "市區觀光" }
+                ],
+                food: ["晚餐: Sushi-Bowl 海鮮丼飯 (滿滿的鮭魚卵與海膽)"],
+                visualPrompt: "新千歲機場落地窗外的雪景 / 狸小路繁華的燈箱與積雪街道"
+                },
+                {
+                day: "Day 2",
+                date: "1/24 (六)",
+                title: "札幌散策・百萬夜景",
+                location: "札幌市區 ➔ 藻岩山",
+                stay: "MYSTAYS 札幌公園精品酒店",
+                color: "bg-red-500",
+                icon: <Icons.Camera className="w-6 h-6 text-white" />,
+                details: [
+                    { type: "spot", text: "札幌市時計台 & 大通公園", sub: "地標打卡" },
+                    { type: "spot", text: "二條市場 & 狸小路", sub: "市場氛圍" },
+                    { type: "spot", text: "藻岩山夜景", sub: "纜車 / 日本新三大夜景" }
+                ],
+                food: ["午餐: 濃郁香料湯咖哩", "晚餐: 根室花丸迴轉壽司"],
+                visualPrompt: "著名的時計台被白雪覆蓋 / 藻岩山纜車與璀璨的寶石般夜景"
+                },
+                {
+                day: "Day 3",
+                date: "1/25 (日)",
+                title: "浪漫運河・小樽",
+                location: "札幌 ➔ 小樽 ➔ 札幌",
+                stay: "MYSTAYS 札幌公園精品酒店",
+                color: "bg-cyan-600",
+                icon: <Icons.RealTrain className="w-6 h-6 text-white" />,
+                details: [
+                    { type: "transport", text: "搭乘JR前往小樽 (沿海鐵路)", sub: "JR 函館本線" },
+                    { type: "spot", text: "小樽水族館 (企鵝雪地走路)", sub: "超人氣活動" },
+                    { type: "spot", text: "小樽運河 & 音樂盒堂 & 堺町通", sub: "浪漫散步" },
+                    { type: "spot", text: "天狗山夜景", sub: "纜車" }
+                ],
+                food: ["午餐: 三角市場 潼波食堂 (任選三色丼)", "點心: LeTAO 雙層乳酪蛋糕"],
+                visualPrompt: "小樽運河的煤氣燈與雪人 / 企鵝在雪地上搖搖晃晃地散步"
+                },
+                {
+                day: "Day 4",
+                date: "1/26 (一)",
+                title: "南下港都・函館",
+                location: "札幌 ➔ 函館",
+                stay: "APA Hotel Hakodate-Ekimae",
+                color: "bg-indigo-600",
+                icon: <Icons.RealTrain className="w-6 h-6 text-white" />,
+                details: [
+                    { type: "transport", text: "長途移動至函館", sub: "JR 特急北斗號" },
+                    { type: "spot", text: "元町公園 & 金森紅磚倉庫", sub: "異國風情" },
+                    { type: "spot", text: "函館山百萬夜景", sub: "世界三大夜景" }
+                ],
+                food: ["午餐: 函館朝市 (釣烏賊?)", "晚餐: 函館山景觀餐廳"],
+                visualPrompt: "金森紅磚倉庫群與白雪對比 / 函館山著名的雙C海灣夜景"
+                },
+                {
+                day: "Day 5",
+                date: "1/27 (二)",
+                title: "五稜郭・星之要塞",
+                location: "函館 ➔ 札幌",
+                stay: "APA Hotel Hakodate-Ekimae",
+                color: "bg-purple-600",
+                icon: <Icons.MapPin className="w-6 h-6 text-white" />,
+                details: [
+                    { type: "spot", text: "五稜郭塔", sub: "俯瞰星形要塞" },
+                    { type: "transport", text: "搭乘JR返回札幌", sub: "JR 特急北斗號" }
+                ],
+                food: ["早餐: 飯店豐盛自助餐", "午餐: 函館當地美食 (小丑漢堡?)"],
+                visualPrompt: "五稜郭塔俯瞰視角：巨大的白色五角星 / 充滿歷史感的路面電車"
+                },
+                {
+                day: "Day 6",
+                date: "1/28 (三)",
+                title: "札幌・歸途移動日",
+                location: "函館 ➔ 札幌市區",
+                stay: "Ibis Styles Sapporo",
+                color: "bg-orange-500",
+                icon: <Icons.ShoppingBag className="w-6 h-6 text-white" />,
+                details: [
+                    { type: "transport", text: "從函館移動回札幌", sub: "JR 移動" },
+                    { type: "activity", text: "札幌市區最後採買", sub: "購物 / 伴手禮" }
+                ],
+                food: ["自由探索札幌美食"],
+                visualPrompt: "JR列車在雪原中行駛 / 滿手的購物袋與札幌街頭"
+                },
+                {
+                day: "Day 7",
+                date: "1/29 (四)",
+                title: "極速快感・手稻滑雪",
+                location: "札幌 ➔ 手稻滑雪場",
+                stay: "Ibis Styles Sapporo",
+                color: "bg-sky-500",
+                icon: <Icons.Mountain className="w-6 h-6 text-white" />,
+                details: [
+                    { type: "activity", text: "手稻滑雪場全日體驗", sub: "Ski / Snowboard" },
+                    { type: "highlight", text: "滑雪初體驗！", sub: "摔倒也是回憶" }
+                ],
+                food: ["滑雪場熱食"],
+                visualPrompt: "穿著鮮豔滑雪衣的四人在雪地合照 / 壯闊的滑雪道與遠景"
+                },
+                {
+                day: "Day 8",
+                date: "1/30 (五)",
+                title: "珍重再見・返台",
+                location: "札幌 ➔ 新千歲 ➔ 台灣",
+                stay: "溫暖的家",
+                color: "bg-teal-600",
+                icon: <Icons.RealPlane className="w-6 h-6 text-white" />,
+                details: [
+                    { type: "transport", text: "前往新千歲機場", sub: "JR 機場快線" },
+                    { type: "activity", text: "機場最後衝刺 & 搭機", sub: "14:40 起飛" },
+                    { type: "arrival", text: "18:15 抵達台灣", sub: "Home Sweet Home" }
+                ],
+                food: ["機上餐點 / 機場拉麵道場"],
+                visualPrompt: "飛機起飛時俯瞰北海道大地 / 滿滿的戰利品與不捨的表情"
+                }
+            ];
+
+            return (
+                <div className="min-h-screen bg-[#FDFBF7] font-sans text-stone-800 overflow-x-hidden">
+                {/* 飄雪背景 */}
+                <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+                    {snowflakes.map((flake) => (
+                    <div
+                        key={flake.id}
+                        className="absolute top-0 bg-white rounded-full opacity-80"
+                        style={{
+                        left: `${flake.left}%`,
+                        width: '8px',
+                        height: '8px',
+                        animation: `fall ${flake.animationDuration}s linear infinite`,
+                        animationDelay: `${flake.delay}s`,
+                        opacity: flake.opacity
+                        }}
+                    />
+                    ))}
+                </div>
+
+                {/* Header 區域 */}
+                <header className="relative z-10 pt-12 pb-8 px-4 text-center">
+                    <div className="inline-block p-6 bg-white shadow-lg rotate-1 border-4 border-stone-200 handwritten-border max-w-2xl w-full relative">
+                    {/* 裝飾圖釘 */}
+                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 w-4 h-4 bg-red-800 rounded-full shadow-md border-2 border-white"></div>
+                    
+                    <h1 className="text-3xl md:text-5xl font-bold text-slate-800 mb-2 tracking-widest">
+                        北海道冬之旅
+                    </h1>
+                    <div className="text-red-600 font-bold text-lg md:text-xl mb-4 flex items-center justify-center gap-2">
+                        <Icons.Snowflake className="w-5 h-5 animate-spin-slow" />
+                        2026.01.22 - 01.30
+                        <Icons.Snowflake className="w-5 h-5 animate-spin-slow" />
+                    </div>
+                    
+                    <div className="flex flex-wrap justify-center gap-4 mt-4 text-stone-600">
+                        {members.map((member, idx) => (
+                        <span key={idx} className="bg-stone-100 px-3 py-1 rounded-full text-sm font-medium border border-stone-300 flex items-center gap-1 shadow-sm">
+                            <Icons.Users size={14} /> {member}
+                        </span>
+                        ))}
+                    </div>
+                    </div>
+                    
+                    <div className="mt-8 text-stone-500 animate-bounce">
+                    <Icons.ArrowDown className="mx-auto" />
+                    </div>
+                </header>
+
+                {/* 行程主體 */}
+                <main className="relative z-10 max-w-5xl mx-auto px-4 pb-20 paper-texture">
+                    {/* 中央時間軸線 (Desktop) / 左側線 (Mobile) */}
+                    <div className="absolute left-8 md:left-1/2 top-0 bottom-0 w-1 bg-stone-300 transform md:-translate-x-1/2 border-l-2 border-dashed border-stone-300 h-full -z-10"></div>
+
+                    <div className="space-y-12">
+                    {itinerary.map((item, index) => {
+                        const isEven = index % 2 === 0;
+                        return (
+                        <div key={index} className={`flex flex-col md:flex-row items-center md:justify-between relative group ${isEven ? 'md:flex-row-reverse' : ''}`}>
+                            
+                            {/* 1. 時間軸節點 */}
+                            <div className="absolute left-8 md:left-1/2 transform -translate-x-1/2 w-12 h-12 bg-white border-4 border-stone-200 rounded-full flex items-center justify-center shadow-md z-20 group-hover:scale-110 transition-transform duration-300">
+                            <div className={`w-8 h-8 ${item.color} rounded-full flex items-center justify-center`}>
+                                {item.icon}
+                            </div>
+                            </div>
+
+                            {/* 2. 日期標籤 (Desktop only - 對側顯示) */}
+                            <div className="hidden md:block w-5/12 text-center md:text-right px-4">
+                            {isEven ? (
+                                <div className="text-left pl-8">
+                                <span className="text-4xl font-bold text-stone-300 select-none font-serif">{item.day}</span>
+                                </div>
+                            ) : (
+                                <div className="text-right pr-8">
+                                <span className="text-4xl font-bold text-stone-300 select-none font-serif">{item.day}</span>
+                                </div>
+                            )}
+                            </div>
+
+                            {/* 3. 內容卡片 */}
+                            <div className="w-full md:w-5/12 pl-20 md:pl-0 mt-4 md:mt-0">
+                            <div className={`bg-white p-4 shadow-lg hover:shadow-xl transition-shadow duration-300 border-2 border-white relative handwritten-border overflow-hidden ${activeDay === index ? 'ring-2 ring-red-400' : ''}`}
+                                onClick={() => setActiveDay(activeDay === index ? null : index)}>
+                                
+                                {/* 裝飾膠帶 */}
+                                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 w-24 h-6 bg-red-100/80 rotate-2 z-10"></div>
+
+                                {/* 圖片佔位符 (模擬拍立得) */}
+                                <div className="w-full h-48 bg-stone-200 mb-4 rounded-sm relative overflow-hidden group-hover:opacity-90 transition-opacity">
+                                <div className="absolute inset-0 flex flex-col items-center justify-center text-stone-400 p-4 text-center bg-stone-100">
+                                    <Icons.Camera className="mb-2 opacity-50" />
+                                    <span className="text-xs font-serif italic text-stone-500">{item.visualPrompt}</span>
+                                </div>
+                                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
+                                    <span className="text-white text-sm font-bold flex items-center gap-1">
+                                    <Icons.MapPin size={14} /> {item.location}
+                                    </span>
+                                </div>
+                                </div>
+
+                                {/* 卡片內容 */}
+                                <div className="space-y-3">
+                                <div className="flex justify-between items-baseline border-b border-stone-100 pb-2">
+                                    <h3 className="text-xl font-bold text-stone-800">{item.title}</h3>
+                                    <span className="text-sm font-bold text-red-500 bg-red-50 px-2 py-1 rounded-md">{item.date}</span>
+                                </div>
+
+                                {/* 住宿 */}
+                                <div className="flex items-start gap-2 text-sm text-stone-600 bg-stone-50 p-2 rounded">
+                                    <Icons.Hotel size={16} className="mt-1 text-blue-500 flex-shrink-0" />
+                                    <div>
+                                    <span className="font-bold block text-xs uppercase tracking-wider text-stone-400">住宿</span>
+                                    {item.stay}
+                                    </div>
+                                </div>
+
+                                {/* 行程細節 */}
+                                <ul className="space-y-2 mt-2">
+                                    {item.details.map((detail, idx) => (
+                                    <li key={idx} className="flex items-start gap-2 text-sm">
+                                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-stone-400 flex-shrink-0"></div>
+                                        <div>
+                                        <span className="text-stone-700">{detail.text}</span>
+                                        <span className="text-xs text-stone-400 ml-2 block sm:inline sm:ml-2">#{detail.sub}</span>
+                                        </div>
+                                    </li>
+                                    ))}
+                                </ul>
+
+                                {/* 美食 */}
+                                {item.food.length > 0 && (
+                                    <div className="mt-4 pt-3 border-t border-dashed border-stone-200">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <Icons.Utensils size={16} className="text-orange-500" />
+                                        <span className="font-bold text-sm text-stone-500">本日美食</span>
+                                    </div>
+                                    <div className="grid grid-cols-1 gap-1">
+                                        {item.food.map((f, i) => (
+                                        <span key={i} className="text-sm bg-orange-50 text-orange-800 px-2 py-1 rounded inline-block self-start">
+                                            {f}
+                                        </span>
+                                        ))}
+                                    </div>
+                                    </div>
+                                )}
+                                </div>
+
+                            </div>
+                            </div>
+                        </div>
+                        );
+                    })}
+                    </div>
+
+                    {/* 頁尾 */}
+                    <div className="mt-20 text-center">
+                    <div className="inline-block p-4 bg-white shadow-md border border-stone-200 rounded-lg transform -rotate-1">
+                        <p className="font-serif text-stone-600 text-lg">"旅行不是為了抵達目的地，而是為了享受旅途中的風景。"</p>
+                        <p className="text-sm text-stone-400 mt-2">Have a safe trip!</p>
+                    </div>
+                    </div>
+                </main>
+
+                {/* 固定底部導航 (Mobile Only) - 選單模擬 */}
+                <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-stone-200 p-3 z-50 flex justify-around text-xs text-stone-500">
+                    <div className="flex flex-col items-center gap-1 text-red-500">
+                    <Icons.Calendar size={20} />
+                    <span>行程</span>
+                    </div>
+                    <div className="flex flex-col items-center gap-1">
+                    <Icons.MapPin size={20} />
+                    <span>地圖</span>
+                    </div>
+                    <div className="flex flex-col items-center gap-1">
+                    <Icons.Coffee size={20} />
+                    <span>筆記</span>
+                    </div>
+                </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<ItineraryApp />);
+    </script>
+</body>
+</html>
