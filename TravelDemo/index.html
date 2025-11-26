@@ -71,13 +71,9 @@
             </svg>
         );
 
-        const Plane = (props) => <IconBase {...props}><path d="M2 12h20"/><path d="M13 2l9 10-9 10"/><path d="M2 12l5-5m-5 5l5 5"/></IconBase>; // 簡化為箭頭飛機意象，或是使用更像飛機的路徑
-        const PlaneReal = (props) => <IconBase {...props}><path d="M2 22h20"/><path d="M22 2l-10 10-10-10"/><path d="M2 2l20 20"/></IconBase>; // 修正為更像飛機的
-        // 為了確保美觀，這裡使用標準 SVG 路徑
         const Icons = {
-            Plane: (props) => <IconBase {...props}><path d="M2 12h20"/><path d="M13 2l9 10-9 10"/><path d="M2 12l5-5m-5 5l5 5"/></IconBase>, // 示意
-            Train: (props) => <IconBase {...props}><rect width="16" height="16" x="4" y="4" rx="2"/><path d="M4 11h16"/><path d="M12 4v16"/><path d="m8 8 8 8"/><path d="m16 8-8 8"/></IconBase>, // 示意
-            // 改用更精確的路徑
+            Plane: (props) => <IconBase {...props}><path d="M2 12h20"/><path d="M13 2l9 10-9 10"/><path d="M2 12l5-5m-5 5l5 5"/></IconBase>,
+            Train: (props) => <IconBase {...props}><rect width="16" height="16" x="4" y="4" rx="2"/><path d="M4 11h16"/><path d="M12 4v16"/><path d="m8 8 8 8"/><path d="m16 8-8 8"/></IconBase>,
             RealPlane: (props) => <IconBase {...props}><path d="M20.67 6.34 18 3.67a1.33 1.33 0 0 0-1.89 0l-1.44 1.44L8 3.33a2 2 0 0 0-2.83 2.83l1.78 6.67L3.33 16.5a1.33 1.33 0 0 0 0 1.89l.86.85a1.33 1.33 0 0 0 1.89 0L9.75 15.6l6.67 1.78A2 2 0 0 0 19.25 14.5l1.42-6.67 1.44-1.44a1.33 1.33 0 0 0 0-1.89Z"/></IconBase>,
             RealTrain: (props) => <IconBase {...props}><rect width="16" height="16" x="4" y="3" rx="2"/><path d="M4 11h16"/><path d="M12 3v8"/><path d="m8 19-2 3"/><path d="m18 22-2-3"/><circle cx="8" cy="15" r="1"/><circle cx="16" cy="15" r="1"/></IconBase>,
             MapPin: (props) => <IconBase {...props}><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></IconBase>,
@@ -111,6 +107,9 @@
 
             const members = ["咻咻咻", "Peggy女神", "秉毅", "瑀晅"];
 
+            // 使用 Pollinations AI 根據地點關鍵字產生穩定的示意圖
+            const getImageUrl = (keyword) => `https://image.pollinations.ai/prompt/${keyword}?width=800&height=600&nologo=true&seed=42`;
+
             const itinerary = [
                 {
                 day: "Day 0",
@@ -125,7 +124,8 @@
                     { type: "hotel", text: "入住機場飯店，養精蓄銳", sub: "Holiday Inn Express" }
                 ],
                 food: [],
-                visualPrompt: "夜晚的高鐵列車飛馳，車窗映著倒影 / 飯店溫暖的燈光"
+                visualPrompt: "夜晚的高鐵列車飛馳，車窗映著倒影 / 飯店溫暖的燈光",
+                imageUrl: getImageUrl("Taiwan_High_Speed_Rail_station_night_modern")
                 },
                 {
                 day: "Day 1",
@@ -141,7 +141,8 @@
                     { type: "activity", text: "狸小路商店街漫步", sub: "市區觀光" }
                 ],
                 food: ["晚餐: Sushi-Bowl 海鮮丼飯 (滿滿的鮭魚卵與海膽)"],
-                visualPrompt: "新千歲機場落地窗外的雪景 / 狸小路繁華的燈箱與積雪街道"
+                visualPrompt: "新千歲機場落地窗外的雪景 / 狸小路繁華的燈箱與積雪街道",
+                imageUrl: getImageUrl("Sapporo_Tanukikoji_Shopping_Arcade_winter_snow_night")
                 },
                 {
                 day: "Day 2",
@@ -157,7 +158,8 @@
                     { type: "spot", text: "藻岩山夜景", sub: "纜車 / 日本新三大夜景" }
                 ],
                 food: ["午餐: 濃郁香料湯咖哩", "晚餐: 根室花丸迴轉壽司"],
-                visualPrompt: "著名的時計台被白雪覆蓋 / 藻岩山纜車與璀璨的寶石般夜景"
+                visualPrompt: "著名的時計台被白雪覆蓋 / 藻岩山纜車與璀璨的寶石般夜景",
+                imageUrl: getImageUrl("Sapporo_Clock_Tower_winter_snow_scenery")
                 },
                 {
                 day: "Day 3",
@@ -174,7 +176,8 @@
                     { type: "spot", text: "天狗山夜景", sub: "纜車" }
                 ],
                 food: ["午餐: 三角市場 潼波食堂 (任選三色丼)", "點心: LeTAO 雙層乳酪蛋糕"],
-                visualPrompt: "小樽運河的煤氣燈與雪人 / 企鵝在雪地上搖搖晃晃地散步"
+                visualPrompt: "小樽運河的煤氣燈與雪人 / 企鵝在雪地上搖搖晃晃地散步",
+                imageUrl: getImageUrl("Otaru_Canal_winter_night_illumination_snow")
                 },
                 {
                 day: "Day 4",
@@ -190,7 +193,8 @@
                     { type: "spot", text: "函館山百萬夜景", sub: "世界三大夜景" }
                 ],
                 food: ["午餐: 函館朝市 (釣烏賊?)", "晚餐: 函館山景觀餐廳"],
-                visualPrompt: "金森紅磚倉庫群與白雪對比 / 函館山著名的雙C海灣夜景"
+                visualPrompt: "金森紅磚倉庫群與白雪對比 / 函館山著名的雙C海灣夜景",
+                imageUrl: getImageUrl("Hakodate_Kanemori_Red_Brick_Warehouse_winter_snow_dusk")
                 },
                 {
                 day: "Day 5",
@@ -205,7 +209,8 @@
                     { type: "transport", text: "搭乘JR返回札幌", sub: "JR 特急北斗號" }
                 ],
                 food: ["早餐: 飯店豐盛自助餐", "午餐: 函館當地美食 (小丑漢堡?)"],
-                visualPrompt: "五稜郭塔俯瞰視角：巨大的白色五角星 / 充滿歷史感的路面電車"
+                visualPrompt: "五稜郭塔俯瞰視角：巨大的白色五角星 / 充滿歷史感的路面電車",
+                imageUrl: getImageUrl("Goryokaku_Park_star_shaped_fort_winter_snow_aerial")
                 },
                 {
                 day: "Day 6",
@@ -220,7 +225,8 @@
                     { type: "activity", text: "札幌市區最後採買", sub: "購物 / 伴手禮" }
                 ],
                 food: ["自由探索札幌美食"],
-                visualPrompt: "JR列車在雪原中行駛 / 滿手的購物袋與札幌街頭"
+                visualPrompt: "JR列車在雪原中行駛 / 滿手的購物袋與札幌街頭",
+                imageUrl: getImageUrl("Sapporo_city_winter_street_shopping_snow")
                 },
                 {
                 day: "Day 7",
@@ -235,7 +241,8 @@
                     { type: "highlight", text: "滑雪初體驗！", sub: "摔倒也是回憶" }
                 ],
                 food: ["滑雪場熱食"],
-                visualPrompt: "穿著鮮豔滑雪衣的四人在雪地合照 / 壯闊的滑雪道與遠景"
+                visualPrompt: "穿著鮮豔滑雪衣的四人在雪地合照 / 壯闊的滑雪道與遠景",
+                imageUrl: getImageUrl("Skiing_at_Sapporo_Teine_Ski_Resort_winter_sunny_landscape")
                 },
                 {
                 day: "Day 8",
@@ -251,7 +258,8 @@
                     { type: "arrival", text: "18:15 抵達台灣", sub: "Home Sweet Home" }
                 ],
                 food: ["機上餐點 / 機場拉麵道場"],
-                visualPrompt: "飛機起飛時俯瞰北海道大地 / 滿滿的戰利品與不捨的表情"
+                visualPrompt: "飛機起飛時俯瞰北海道大地 / 滿滿的戰利品與不捨的表情",
+                imageUrl: getImageUrl("New_Chitose_Airport_terminal_winter_snow_plane")
                 }
             ];
 
@@ -343,17 +351,19 @@
                                 {/* 裝飾膠帶 */}
                                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 w-24 h-6 bg-red-100/80 rotate-2 z-10"></div>
 
-                                {/* 圖片佔位符 (模擬拍立得) */}
-                                <div className="w-full h-48 bg-stone-200 mb-4 rounded-sm relative overflow-hidden group-hover:opacity-90 transition-opacity">
-                                <div className="absolute inset-0 flex flex-col items-center justify-center text-stone-400 p-4 text-center bg-stone-100">
-                                    <Icons.Camera className="mb-2 opacity-50" />
-                                    <span className="text-xs font-serif italic text-stone-500">{item.visualPrompt}</span>
-                                </div>
-                                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
-                                    <span className="text-white text-sm font-bold flex items-center gap-1">
-                                    <Icons.MapPin size={14} /> {item.location}
-                                    </span>
-                                </div>
+                                {/* 圖片顯示區域 (修正為真實圖片) */}
+                                <div className="w-full h-48 bg-stone-200 mb-4 rounded-sm relative overflow-hidden group-hover:opacity-95 transition-opacity">
+                                    <img 
+                                        src={item.imageUrl} 
+                                        alt={item.visualPrompt} 
+                                        className="w-full h-full object-cover transform hover:scale-110 transition-transform duration-700"
+                                        loading="lazy"
+                                    />
+                                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2">
+                                        <span className="text-white text-sm font-bold flex items-center gap-1">
+                                        <Icons.MapPin size={14} /> {item.location}
+                                        </span>
+                                    </div>
                                 </div>
 
                                 {/* 卡片內容 */}
