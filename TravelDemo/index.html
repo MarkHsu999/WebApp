@@ -86,14 +86,14 @@
             Coffee: (props) => <IconBase {...props}><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" x2="6" y1="1" y2="4"/><line x1="10" x2="10" y1="1" y2="4"/><line x1="14" x2="14" y1="1" y2="4"/></IconBase>,
             Mountain: (props) => <IconBase {...props}><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></IconBase>,
             ShoppingBag: (props) => <IconBase {...props}><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></IconBase>,
-            ArrowDown: (props) => <IconBase {...props}><line x1="12" x2="12" y1="5" y2="19"/><polyline points="19 12 12 19 5 12"/></IconBase>
+            ArrowDown: (props) => <IconBase {...props}><line x1="12" x2="12" y1="5" y2="19"/><polyline points="19 12 12 19 5 12"/></IconBase>,
+            Navigation: (props) => <IconBase {...props}><polygon points="3 11 22 2 13 21 11 13 3 11"/></IconBase>
         };
 
         const ItineraryApp = () => {
             const [activeDay, setActiveDay] = useState(null);
-
-            // 飄雪效果邏輯
             const [snowflakes, setSnowflakes] = useState([]);
+
             useEffect(() => {
                 const flakes = Array.from({ length: 30 }).map((_, i) => ({
                 id: i,
@@ -106,160 +106,174 @@
             }, []);
 
             const members = ["咻咻咻", "Peggy女神", "秉毅", "瑀晅"];
-
-            // 使用 Pollinations AI 根據地點關鍵字產生穩定的示意圖
             const getImageUrl = (keyword) => `https://image.pollinations.ai/prompt/${keyword}?width=800&height=600&nologo=true&seed=42`;
+
+            const openMap = (query, isNavigation = false) => {
+                const baseUrl = isNavigation 
+                    ? "https://www.google.com/maps/dir/?api=1&destination=" 
+                    : "https://www.google.com/maps/search/?api=1&query=";
+                window.open(`${baseUrl}${encodeURIComponent(query)}`, '_blank');
+            };
 
             const itinerary = [
                 {
-                day: "Day 0",
-                date: "1/22 (四)",
-                title: "旅程序章・啟程",
-                location: "台南 ➔ 桃園",
-                stay: "桃園機場假日酒店",
-                color: "bg-slate-600",
-                icon: <Icons.RealTrain className="w-6 h-6 text-white" />,
-                details: [
-                    { type: "transport", text: "晚上從台南搭乘高鐵前往桃園", sub: "高鐵 / 捷運" },
-                    { type: "hotel", text: "入住機場飯店，養精蓄銳", sub: "Holiday Inn Express" }
-                ],
-                food: [],
-                visualPrompt: "夜晚的高鐵列車飛馳，車窗映著倒影 / 飯店溫暖的燈光",
-                imageUrl: getImageUrl("Taiwan_High_Speed_Rail_station_night_modern")
+                    day: "Day 0",
+                    date: "1/22 (四)",
+                    title: "旅程序章・啟程",
+                    location: "台南 ➔ 桃園",
+                    stay: "桃園機場假日酒店",
+                    color: "bg-slate-600",
+                    icon: <Icons.RealTrain className="w-6 h-6 text-white" />,
+                    mainLocationQuery: "桃園機場假日酒店",
+                    details: [
+                        { type: "transport", text: "晚上從台南搭乘高鐵前往桃園", sub: "高鐵 / 捷運" },
+                        { type: "hotel", text: "入住機場飯店，養精蓄銳", sub: "Holiday Inn Express", mapQuery: "桃園機場假日酒店" }
+                    ],
+                    food: [],
+                    visualPrompt: "夜晚的高鐵列車飛馳，車窗映著倒影 / 飯店溫暖的燈光",
+                    imageUrl: getImageUrl("Taiwan_High_Speed_Rail_station_night_modern")
                 },
                 {
-                day: "Day 1",
-                date: "1/23 (五)",
-                title: "初見雪國・札幌",
-                location: "桃園 ➔ 新千歲 ➔ 札幌",
-                stay: "MYSTAYS 札幌公園精品酒店",
-                color: "bg-blue-500",
-                icon: <Icons.RealPlane className="w-6 h-6 text-white" />,
-                details: [
-                    { type: "transport", text: "飛往北海道新千歲機場", sub: "飛機" },
-                    { type: "activity", text: "領取周遊券 & Check In", sub: "JR 外籍旅客服務處" },
-                    { type: "activity", text: "狸小路商店街漫步", sub: "市區觀光" }
-                ],
-                food: ["晚餐: Sushi-Bowl 海鮮丼飯 (滿滿的鮭魚卵與海膽)"],
-                visualPrompt: "新千歲機場落地窗外的雪景 / 狸小路繁華的燈箱與積雪街道",
-                imageUrl: getImageUrl("Sapporo_Tanukikoji_Shopping_Arcade_winter_snow_night")
+                    day: "Day 1",
+                    date: "1/23 (五)",
+                    title: "初見雪國・札幌",
+                    location: "桃園 ➔ 新千歲 ➔ 札幌",
+                    stay: "MYSTAYS 札幌公園精品酒店",
+                    color: "bg-blue-500",
+                    icon: <Icons.RealPlane className="w-6 h-6 text-white" />,
+                    mainLocationQuery: "MYSTAYS札幌公園精品酒店",
+                    details: [
+                        { type: "transport", text: "飛往北海道新千歲機場", sub: "飛機", mapQuery: "New Chitose Airport" },
+                        { type: "activity", text: "領取周遊券 & Check In", sub: "JR 外籍旅客服務處" },
+                        { type: "activity", text: "狸小路商店街漫步", sub: "市區觀光", mapQuery: "狸小路商店街" }
+                    ],
+                    food: ["晚餐: Sushi-Bowl 海鮮丼飯 (滿滿的鮭魚卵與海膽)"],
+                    visualPrompt: "新千歲機場落地窗外的雪景 / 狸小路繁華的燈箱與積雪街道",
+                    imageUrl: getImageUrl("Sapporo_Tanukikoji_Shopping_Arcade_winter_snow_night")
                 },
                 {
-                day: "Day 2",
-                date: "1/24 (六)",
-                title: "札幌散策・百萬夜景",
-                location: "札幌市區 ➔ 藻岩山",
-                stay: "MYSTAYS 札幌公園精品酒店",
-                color: "bg-red-500",
-                icon: <Icons.Camera className="w-6 h-6 text-white" />,
-                details: [
-                    { type: "spot", text: "札幌市時計台 & 大通公園", sub: "地標打卡" },
-                    { type: "spot", text: "二條市場 & 狸小路", sub: "市場氛圍" },
-                    { type: "spot", text: "藻岩山夜景", sub: "纜車 / 日本新三大夜景" }
-                ],
-                food: ["午餐: 濃郁香料湯咖哩", "晚餐: 根室花丸迴轉壽司"],
-                visualPrompt: "著名的時計台被白雪覆蓋 / 藻岩山纜車與璀璨的寶石般夜景",
-                imageUrl: getImageUrl("Sapporo_Clock_Tower_winter_snow_scenery")
+                    day: "Day 2",
+                    date: "1/24 (六)",
+                    title: "札幌散策・百萬夜景",
+                    location: "札幌市區 ➔ 藻岩山",
+                    stay: "MYSTAYS 札幌公園精品酒店",
+                    color: "bg-red-500",
+                    icon: <Icons.Camera className="w-6 h-6 text-white" />,
+                    mainLocationQuery: "藻岩山夜景",
+                    details: [
+                        { type: "spot", text: "札幌市時計台 & 大通公園", sub: "地標打卡", mapQuery: "札幌市時計台" },
+                        { type: "spot", text: "二條市場", sub: "市場氛圍", mapQuery: "二條市場" },
+                        { type: "spot", text: "藻岩山夜景", sub: "纜車 / 日本新三大夜景", mapQuery: "藻岩山纜車" }
+                    ],
+                    food: ["午餐: 濃郁香料湯咖哩", "晚餐: 根室花丸迴轉壽司"],
+                    visualPrompt: "著名的時計台被白雪覆蓋 / 藻岩山纜車與璀璨的寶石般夜景",
+                    imageUrl: getImageUrl("Sapporo_Clock_Tower_winter_snow_scenery")
                 },
                 {
-                day: "Day 3",
-                date: "1/25 (日)",
-                title: "浪漫運河・小樽",
-                location: "札幌 ➔ 小樽 ➔ 札幌",
-                stay: "MYSTAYS 札幌公園精品酒店",
-                color: "bg-cyan-600",
-                icon: <Icons.RealTrain className="w-6 h-6 text-white" />,
-                details: [
-                    { type: "transport", text: "搭乘JR前往小樽 (沿海鐵路)", sub: "JR 函館本線" },
-                    { type: "spot", text: "小樽水族館 (企鵝雪地走路)", sub: "超人氣活動" },
-                    { type: "spot", text: "小樽運河 & 音樂盒堂 & 堺町通", sub: "浪漫散步" },
-                    { type: "spot", text: "天狗山夜景", sub: "纜車" }
-                ],
-                food: ["午餐: 三角市場 潼波食堂 (任選三色丼)", "點心: LeTAO 雙層乳酪蛋糕"],
-                visualPrompt: "小樽運河的煤氣燈與雪人 / 企鵝在雪地上搖搖晃晃地散步",
-                imageUrl: getImageUrl("Otaru_Canal_winter_night_illumination_snow")
+                    day: "Day 3",
+                    date: "1/25 (日)",
+                    title: "浪漫運河・小樽",
+                    location: "札幌 ➔ 小樽 ➔ 札幌",
+                    stay: "MYSTAYS 札幌公園精品酒店",
+                    color: "bg-cyan-600",
+                    icon: <Icons.RealTrain className="w-6 h-6 text-white" />,
+                    mainLocationQuery: "小樽運河",
+                    details: [
+                        { type: "transport", text: "搭乘JR前往小樽 (沿海鐵路)", sub: "JR 函館本線", mapQuery: "小樽站" },
+                        { type: "spot", text: "小樽水族館 (企鵝雪地走路)", sub: "超人氣活動", mapQuery: "小樽水族館" },
+                        { type: "spot", text: "小樽運河 & 音樂盒堂 & 堺町通", sub: "浪漫散步", mapQuery: "小樽運河" },
+                        { type: "spot", text: "天狗山夜景", sub: "纜車", mapQuery: "小樽天狗山纜車" }
+                    ],
+                    food: ["午餐: 三角市場 潼波食堂 (任選三色丼)", "點心: LeTAO 雙層乳酪蛋糕"],
+                    visualPrompt: "小樽運河的煤氣燈與雪人 / 企鵝在雪地上搖搖晃晃地散步",
+                    imageUrl: getImageUrl("Otaru_Canal_winter_night_illumination_snow")
                 },
                 {
-                day: "Day 4",
-                date: "1/26 (一)",
-                title: "南下港都・函館",
-                location: "札幌 ➔ 函館",
-                stay: "APA Hotel Hakodate-Ekimae",
-                color: "bg-indigo-600",
-                icon: <Icons.RealTrain className="w-6 h-6 text-white" />,
-                details: [
-                    { type: "transport", text: "長途移動至函館", sub: "JR 特急北斗號" },
-                    { type: "spot", text: "元町公園 & 金森紅磚倉庫", sub: "異國風情" },
-                    { type: "spot", text: "函館山百萬夜景", sub: "世界三大夜景" }
-                ],
-                food: ["午餐: 函館朝市 (釣烏賊?)", "晚餐: 函館山景觀餐廳"],
-                visualPrompt: "金森紅磚倉庫群與白雪對比 / 函館山著名的雙C海灣夜景",
-                imageUrl: getImageUrl("Hakodate_Kanemori_Red_Brick_Warehouse_winter_snow_dusk")
+                    day: "Day 4",
+                    date: "1/26 (一)",
+                    title: "南下港都・函館",
+                    location: "札幌 ➔ 函館",
+                    stay: "APA Hotel Hakodate-Ekimae",
+                    color: "bg-indigo-600",
+                    icon: <Icons.RealTrain className="w-6 h-6 text-white" />,
+                    mainLocationQuery: "APA Hotel Hakodate-Ekimae",
+                    details: [
+                        { type: "transport", text: "長途移動至函館", sub: "JR 特急北斗號", mapQuery: "函館站" },
+                        { type: "spot", text: "元町公園 & 金森紅磚倉庫", sub: "異國風情", mapQuery: "金森紅磚倉庫" },
+                        { type: "spot", text: "函館山百萬夜景", sub: "世界三大夜景", mapQuery: "函館山纜車" }
+                    ],
+                    food: ["午餐: 函館朝市 (釣烏賊?)", "晚餐: 函館山景觀餐廳"],
+                    visualPrompt: "金森紅磚倉庫群與白雪對比 / 函館山著名的雙C海灣夜景",
+                    imageUrl: getImageUrl("Hakodate_Kanemori_Red_Brick_Warehouse_winter_snow_dusk")
                 },
                 {
-                day: "Day 5",
-                date: "1/27 (二)",
-                title: "五稜郭・星之要塞",
-                location: "函館 ➔ 札幌",
-                stay: "APA Hotel Hakodate-Ekimae",
-                color: "bg-purple-600",
-                icon: <Icons.MapPin className="w-6 h-6 text-white" />,
-                details: [
-                    { type: "spot", text: "五稜郭塔", sub: "俯瞰星形要塞" },
-                    { type: "transport", text: "搭乘JR返回札幌", sub: "JR 特急北斗號" }
-                ],
-                food: ["早餐: 飯店豐盛自助餐", "午餐: 函館當地美食 (小丑漢堡?)"],
-                visualPrompt: "五稜郭塔俯瞰視角：巨大的白色五角星 / 充滿歷史感的路面電車",
-                imageUrl: getImageUrl("Goryokaku_Park_star_shaped_fort_winter_snow_aerial")
+                    day: "Day 5",
+                    date: "1/27 (二)",
+                    title: "五稜郭・星之要塞",
+                    location: "函館 ➔ 札幌",
+                    stay: "APA Hotel Hakodate-Ekimae",
+                    color: "bg-purple-600",
+                    icon: <Icons.MapPin className="w-6 h-6 text-white" />,
+                    mainLocationQuery: "五稜郭塔",
+                    details: [
+                        { type: "spot", text: "五稜郭塔", sub: "俯瞰星形要塞", mapQuery: "五稜郭塔" },
+                        { type: "transport", text: "搭乘JR返回札幌", sub: "JR 特急北斗號", mapQuery: "札幌站" }
+                    ],
+                    food: ["早餐: 飯店豐盛自助餐", "午餐: 函館當地美食 (小丑漢堡?)"],
+                    visualPrompt: "五稜郭塔俯瞰視角：巨大的白色五角星 / 充滿歷史感的路面電車",
+                    imageUrl: getImageUrl("Goryokaku_Park_star_shaped_fort_winter_snow_aerial")
                 },
                 {
-                day: "Day 6",
-                date: "1/28 (三)",
-                title: "札幌・歸途移動日",
-                location: "函館 ➔ 札幌市區",
-                stay: "Ibis Styles Sapporo",
-                color: "bg-orange-500",
-                icon: <Icons.ShoppingBag className="w-6 h-6 text-white" />,
-                details: [
-                    { type: "transport", text: "從函館移動回札幌", sub: "JR 移動" },
-                    { type: "activity", text: "札幌市區最後採買", sub: "購物 / 伴手禮" }
-                ],
-                food: ["自由探索札幌美食"],
-                visualPrompt: "JR列車在雪原中行駛 / 滿手的購物袋與札幌街頭",
-                imageUrl: getImageUrl("Sapporo_city_winter_street_shopping_snow")
+                    day: "Day 6",
+                    date: "1/28 (三)",
+                    title: "札幌・歸途移動日",
+                    location: "函館 ➔ 札幌市區",
+                    stay: "Ibis Styles Sapporo",
+                    color: "bg-orange-500",
+                    icon: <Icons.ShoppingBag className="w-6 h-6 text-white" />,
+                    mainLocationQuery: "Ibis Styles Sapporo",
+                    details: [
+                        { type: "transport", text: "從函館移動回札幌", sub: "JR 移動" },
+                        { type: "activity", text: "札幌市區最後採買", sub: "購物 / 伴手禮", mapQuery: "札幌站" }
+                    ],
+                    food: ["自由探索札幌美食"],
+                    visualPrompt: "JR列車在雪原中行駛 / 滿手的購物袋與札幌街頭",
+                    imageUrl: getImageUrl("Sapporo_city_winter_street_shopping_snow")
                 },
                 {
-                day: "Day 7",
-                date: "1/29 (四)",
-                title: "極速快感・手稻滑雪",
-                location: "札幌 ➔ 手稻滑雪場",
-                stay: "Ibis Styles Sapporo",
-                color: "bg-sky-500",
-                icon: <Icons.Mountain className="w-6 h-6 text-white" />,
-                details: [
-                    { type: "activity", text: "手稻滑雪場全日體驗", sub: "Ski / Snowboard" },
-                    { type: "highlight", text: "滑雪初體驗！", sub: "摔倒也是回憶" }
-                ],
-                food: ["滑雪場熱食"],
-                visualPrompt: "穿著鮮豔滑雪衣的四人在雪地合照 / 壯闊的滑雪道與遠景",
-                imageUrl: getImageUrl("Skiing_at_Sapporo_Teine_Ski_Resort_winter_sunny_landscape")
+                    day: "Day 7",
+                    date: "1/29 (四)",
+                    title: "極速快感・手稻滑雪",
+                    location: "札幌 ➔ 手稻滑雪場",
+                    stay: "Ibis Styles Sapporo",
+                    color: "bg-sky-500",
+                    icon: <Icons.Mountain className="w-6 h-6 text-white" />,
+                    mainLocationQuery: "手稻滑雪場",
+                    details: [
+                        { type: "activity", text: "手稻滑雪場全日體驗", sub: "Ski / Snowboard", mapQuery: "手稻滑雪場" },
+                        { type: "highlight", text: "滑雪初體驗！", sub: "摔倒也是回憶" }
+                    ],
+                    food: ["滑雪場熱食"],
+                    visualPrompt: "穿著鮮豔滑雪衣的四人在雪地合照 / 壯闊的滑雪道與遠景",
+                    imageUrl: getImageUrl("Skiing_at_Sapporo_Teine_Ski_Resort_winter_sunny_landscape")
                 },
                 {
-                day: "Day 8",
-                date: "1/30 (五)",
-                title: "珍重再見・返台",
-                location: "札幌 ➔ 新千歲 ➔ 台灣",
-                stay: "溫暖的家",
-                color: "bg-teal-600",
-                icon: <Icons.RealPlane className="w-6 h-6 text-white" />,
-                details: [
-                    { type: "transport", text: "前往新千歲機場", sub: "JR 機場快線" },
-                    { type: "activity", text: "機場最後衝刺 & 搭機", sub: "14:40 起飛" },
-                    { type: "arrival", text: "18:15 抵達台灣", sub: "Home Sweet Home" }
-                ],
-                food: ["機上餐點 / 機場拉麵道場"],
-                visualPrompt: "飛機起飛時俯瞰北海道大地 / 滿滿的戰利品與不捨的表情",
-                imageUrl: getImageUrl("New_Chitose_Airport_terminal_winter_snow_plane")
+                    day: "Day 8",
+                    date: "1/30 (五)",
+                    title: "珍重再見・返台",
+                    location: "札幌 ➔ 新千歲 ➔ 台灣",
+                    stay: "溫暖的家",
+                    color: "bg-teal-600",
+                    icon: <Icons.RealPlane className="w-6 h-6 text-white" />,
+                    mainLocationQuery: "New Chitose Airport",
+                    details: [
+                        { type: "transport", text: "前往新千歲機場", sub: "JR 機場快線", mapQuery: "新千歲機場" },
+                        { type: "activity", text: "機場最後衝刺 & 搭機", sub: "14:40 起飛" },
+                        { type: "arrival", text: "18:15 抵達台灣", sub: "Home Sweet Home", mapQuery: "Taoyuan International Airport" }
+                    ],
+                    food: ["機上餐點 / 機場拉麵道場"],
+                    visualPrompt: "飛機起飛時俯瞰北海道大地 / 滿滿的戰利品與不捨的表情",
+                    imageUrl: getImageUrl("New_Chitose_Airport_terminal_winter_snow_plane")
                 }
             ];
 
@@ -351,8 +365,14 @@
                                 {/* 裝飾膠帶 */}
                                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 w-24 h-6 bg-red-100/80 rotate-2 z-10"></div>
 
-                                {/* 圖片顯示區域 (修正為真實圖片) */}
-                                <div className="w-full h-48 bg-stone-200 mb-4 rounded-sm relative overflow-hidden group-hover:opacity-95 transition-opacity">
+                                {/* 圖片顯示區域 */}
+                                <div className="w-full h-48 bg-stone-200 mb-4 rounded-sm relative overflow-hidden group-hover:opacity-95 transition-opacity cursor-pointer" 
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        openMap(item.mainLocationQuery);
+                                    }}
+                                    title="點擊查看地圖"
+                                >
                                     <img 
                                         src={item.imageUrl} 
                                         alt={item.visualPrompt} 
@@ -364,6 +384,9 @@
                                         <Icons.MapPin size={14} /> {item.location}
                                         </span>
                                     </div>
+                                    <div className="absolute top-2 right-2 bg-white/80 p-1.5 rounded-full hover:bg-white transition-colors">
+                                         <Icons.MapPin size={16} className="text-red-500"/>
+                                    </div>
                                 </div>
 
                                 {/* 卡片內容 */}
@@ -374,23 +397,51 @@
                                 </div>
 
                                 {/* 住宿 */}
-                                <div className="flex items-start gap-2 text-sm text-stone-600 bg-stone-50 p-2 rounded">
-                                    <Icons.Hotel size={16} className="mt-1 text-blue-500 flex-shrink-0" />
-                                    <div>
-                                    <span className="font-bold block text-xs uppercase tracking-wider text-stone-400">住宿</span>
-                                    {item.stay}
+                                <div className="flex justify-between items-start gap-2 text-sm text-stone-600 bg-stone-50 p-2 rounded">
+                                    <div className="flex items-start gap-2">
+                                        <Icons.Hotel size={16} className="mt-1 text-blue-500 flex-shrink-0" />
+                                        <div>
+                                            <span className="font-bold block text-xs uppercase tracking-wider text-stone-400">住宿</span>
+                                            {item.stay}
+                                        </div>
                                     </div>
+                                    {/* 住宿地圖連結 */}
+                                    <button 
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            openMap(item.stay);
+                                        }}
+                                        className="text-stone-400 hover:text-red-500 transition-colors p-1"
+                                        title="在 Google Map 查看住宿"
+                                    >
+                                        <Icons.MapPin size={16} />
+                                    </button>
                                 </div>
 
                                 {/* 行程細節 */}
                                 <ul className="space-y-2 mt-2">
                                     {item.details.map((detail, idx) => (
-                                    <li key={idx} className="flex items-start gap-2 text-sm">
-                                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-stone-400 flex-shrink-0"></div>
-                                        <div>
-                                        <span className="text-stone-700">{detail.text}</span>
-                                        <span className="text-xs text-stone-400 ml-2 block sm:inline sm:ml-2">#{detail.sub}</span>
+                                    <li key={idx} className="flex justify-between items-start gap-2 text-sm group/item">
+                                        <div className="flex items-start gap-2 flex-1">
+                                            <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-stone-400 flex-shrink-0"></div>
+                                            <div>
+                                            <span className="text-stone-700">{detail.text}</span>
+                                            <span className="text-xs text-stone-400 ml-2 block sm:inline sm:ml-2">#{detail.sub}</span>
+                                            </div>
                                         </div>
+                                        {/* 景點地圖按鈕 */}
+                                        {detail.mapQuery && (
+                                            <button 
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    openMap(detail.mapQuery);
+                                                }}
+                                                className="opacity-40 group-hover/item:opacity-100 transition-opacity text-blue-500 hover:text-blue-700 p-1 bg-blue-50 rounded-full"
+                                                title={`在地圖上查看: ${detail.mapQuery}`}
+                                            >
+                                                <Icons.MapPin size={14} />
+                                            </button>
+                                        )}
                                     </li>
                                     ))}
                                 </ul>
@@ -411,6 +462,20 @@
                                     </div>
                                     </div>
                                 )}
+
+                                {/* 主要導航按鈕 (新增) */}
+                                <div className="mt-4">
+                                    <button 
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            openMap(item.mainLocationQuery, true);
+                                        }}
+                                        className="w-full flex items-center justify-center gap-2 bg-stone-800 text-white py-2 rounded-md hover:bg-stone-700 transition-colors shadow-sm text-sm font-medium"
+                                    >
+                                        <Icons.Navigation size={16} />
+                                        <span>帶我去 {item.mainLocationQuery.split(' ')[0]}</span>
+                                    </button>
+                                </div>
                                 </div>
 
                             </div>
