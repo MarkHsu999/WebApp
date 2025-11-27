@@ -46,7 +46,7 @@
         };
 
         const TripPlanner = () => {
-            const [activeTab, setActiveTab] = useState('day1');
+            const [activeTab, setActiveTab] = useState('day3'); // 預設跳到 Day 3 方便查看變更
             const [showMenu, setShowMenu] = useState(false);
 
             // Flight Data
@@ -60,8 +60,8 @@
                 inbound: {
                 date: '2026/04/13 (一)',
                 route: '金門 (KNH) → 台南 (TNN)',
-                time: '14:30 - 15:25',
-                flight: '立榮 B7-8986 (AT7)'
+                time: '17:35 - 18:30',
+                flight: '立榮 B7-8992 (AT7)'
                 }
             };
 
@@ -80,7 +80,7 @@
                 schedule: [
                 { day: "4/11", type: "機車 (125cc)", price: "$400-500/天", note: "機場取車，雙載漫遊市區" },
                 { day: "4/12", type: "汽車 (Vios/Yaris)", price: "$1600-1800/天", note: "機場換車，舒適前往較遠景點，車內可放更多合照裝備" },
-                { day: "4/13", type: "機車 (125cc)", price: "$200-250/半天", note: "機場換車，跑最後行程後直接還車登機" }
+                { day: "4/13", type: "機車 (125cc)", price: "$400-500/天", note: "機場換車，09:00~16:30 約 7.5 小時，建議租一天較划算" }
                 ],
                 tips: "強烈建議事先網上預約。由於您的交通工具頻繁更換，建議都在『機場店』處理，雖然需要往返飯店與機場，但這是最保險且車源最足的方式。"
             };
@@ -159,22 +159,24 @@
                 day3: {
                 date: '4/13 (一)',
                 transport: '機車 🛵',
-                focus: '古寧頭戰役 & 最後採買',
+                focus: '古寧頭戰役 & 後浦文青漫步',
                 schedule: [
                     { time: '09:00', title: '交通轉換', desc: '開車至機場換回機車 (行李可先寄放機場置物櫃或車行)。', icon: <Icons.Bike className="w-4 h-4" /> },
                     { time: '09:40', title: '古寧頭戰史館', desc: '在此緬懷戰役歷史，周邊有播音牆可遙望對岸。', loc: '古寧頭戰史館', dur: '1hr', type: 'spot' },
-                    { time: '11:00', title: '北山播音牆', desc: '特殊的蜂巢式造型，鄧麗君心戰喊話的地點。', loc: '北山播音牆', dur: '30min', type: 'spot' },
+                    { time: '11:00', title: '北山播音牆 & 北山古洋樓', desc: '特殊的蜂巢式播音牆，以及充滿彈孔的古洋樓，見證歷史的痕跡，拍照非常有張力。', loc: '北山播音牆', dur: '45min', type: 'spot' },
                     { 
                     time: '12:00', 
-                    title: '午餐 & 伴手禮', 
-                    desc: '金合利鋼刀、貢糖、牛肉乾採買。推薦：金城周邊解決。', 
-                    loc: '金城老街', 
+                    title: '午餐：金城商圈', 
+                    desc: '回到金城市區用餐。推薦：蚵嗲之家、米香屋廣東粥。', 
+                    loc: '金城模範街', 
                     dur: '1.5hr', 
-                    type: 'shop',
-                    cost: '餐費約 $150，伴手禮另計'
+                    type: 'food',
+                    cost: '約 $100-200 /人'
                     },
-                    { time: '13:30', title: '機場還車 & 報到', desc: '整理行李，準備搭機', icon: <Icons.Plane className="w-4 h-4" /> },
-                    { time: '14:30', title: '起飛返台南', desc: '帶著回憶回家', icon: <Icons.Plane className="w-4 h-4" /> }
+                    { time: '13:30', title: '後浦16藝文特區', desc: '傳統閩南古厝改建的文創園區，有許多手作小店、咖啡廳，非常適合情侶拍照、買文創小物。', loc: '後浦16藝文特區', dur: '1hr', type: 'spot' },
+                    { time: '14:30', title: '模範街 & 清金門鎮總兵署', desc: '紅磚拱廊的街道非常有特色，買買伴手禮(燒餅、貢糖)，逛逛清朝的總兵署衙門。', loc: '模範街', dur: '1.5hr', type: 'shop' },
+                    { time: '16:30', title: '機場還車 & 報到', desc: '整理行李，準備搭機', icon: <Icons.Plane className="w-4 h-4" /> },
+                    { time: '17:35', title: '起飛返台南', desc: '帶著回憶回家 (預計 18:30 抵達)', icon: <Icons.Plane className="w-4 h-4" /> }
                 ]
                 }
             };
