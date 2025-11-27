@@ -20,6 +20,10 @@
         .animate-fadeIn {
             animation: fadeIn 0.3s ease-out forwards;
         }
+        .modal-overlay {
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+        }
     </style>
 </head>
 <body class="bg-slate-50">
@@ -28,9 +32,9 @@
     <script type="text/babel">
         const { useState } = React;
 
-        // 簡易圖示組件 (替代 lucide-react，為了方便單檔運作)
+        // 簡易圖示組件
         const Icons = {
-            Plane: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12h20"/><path d="M13 2l9 10-9 10"/><path d="M13 12L2 2"/><path d="M13 12L2 22"/></svg>, // 簡化替代
+            Plane: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12h20"/><path d="M13 2l9 10-9 10"/><path d="M13 12L2 2"/><path d="M13 12L2 22"/></svg>,
             MapPin: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>,
             Clock: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
             Navigation: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>,
@@ -42,26 +46,45 @@
             Menu: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>,
             X: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>,
             Map: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" x2="9" y1="3" y2="18"/><line x1="15" x2="15" y1="6" y2="21"/></svg>,
-            Utensils: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>
+            Utensils: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>,
+            QrCode: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/></svg>
         };
 
         const TripPlanner = () => {
-            const [activeTab, setActiveTab] = useState('day3'); // 預設跳到 Day 3 方便查看變更
+            const [activeTab, setActiveTab] = useState('day3');
             const [showMenu, setShowMenu] = useState(false);
+            const [qrModal, setQrModal] = useState({ isOpen: false, data: '', title: '' });
 
             // Flight Data
             const flights = {
+                bookingRef: 'DX6PYI',
+                passengers: [
+                    { 
+                        name: '方偉倫', 
+                        tickets: [
+                            { num: '5252469027077', type: '去程' }, 
+                            { num: '5252469023873', type: '回程' }
+                        ] 
+                    },
+                    { 
+                        name: '許常志', 
+                        tickets: [
+                            { num: '5252469027078', type: '去程' }, 
+                            { num: '5252469023874', type: '回程' }
+                        ] 
+                    }
+                ],
                 outbound: {
-                date: '2026/04/11 (六)',
-                route: '台南 (TNN) → 金門 (KNH)',
-                time: '09:40 - 10:30',
-                flight: '立榮 B7-8981 (AT7)'
+                    date: '2026/04/11 (六)',
+                    route: '台南 (TNN) → 金門 (KNH)',
+                    time: '09:40 - 10:30',
+                    flight: '立榮 B7-8981 (AT7)'
                 },
                 inbound: {
-                date: '2026/04/13 (一)',
-                route: '金門 (KNH) → 台南 (TNN)',
-                time: '17:35 - 18:30',
-                flight: '立榮 B7-8992 (AT7)'
+                    date: '2026/04/13 (一)',
+                    route: '金門 (KNH) → 台南 (TNN)',
+                    time: '17:35 - 18:30',
+                    flight: '立榮 B7-8992 (AT7)'
                 }
             };
 
@@ -186,6 +209,18 @@
                 window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank');
             };
 
+            const openQr = (ticketNum, name) => {
+                setQrModal({
+                    isOpen: true,
+                    data: `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${ticketNum}`,
+                    title: `${name} - 票號: ${ticketNum}`
+                });
+            };
+
+            const closeQr = () => {
+                setQrModal({ ...qrModal, isOpen: false });
+            };
+
             return (
                 <div className="min-h-screen font-sans text-slate-800 pb-12">
                 {/* Mobile Header */}
@@ -235,34 +270,61 @@
                     
                     {/* Flight Summary Card */}
                     <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6">
-                    <div className="flex justify-between items-center mb-4 pb-2 border-b border-slate-100">
-                        <h2 className="font-bold text-slate-700 flex items-center">
-                        <Icons.Plane className="w-5 h-5 mr-2 text-blue-600" /> 航班資訊
-                        </h2>
-                        <span className="text-xs bg-pink-100 text-pink-800 px-2 py-1 rounded-full">情侶專屬行程</span>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                        <div className="flex items-start">
-                        <div className="bg-blue-50 p-2 rounded mr-3">
-                            <span className="font-bold text-blue-700">去</span>
+                        <div className="flex justify-between items-center mb-4 pb-2 border-b border-slate-100">
+                            <h2 className="font-bold text-slate-700 flex items-center">
+                            <Icons.Plane className="w-5 h-5 mr-2 text-blue-600" /> 航班資訊
+                            </h2>
+                            <span className="text-xs bg-pink-100 text-pink-800 px-2 py-1 rounded-full">訂位代號：{flights.bookingRef}</span>
                         </div>
-                        <div>
-                            <p className="font-semibold">{flights.outbound.date}</p>
-                            <p className="text-slate-500">{flights.outbound.route}</p>
-                            <p className="text-slate-600">{flights.outbound.time} | {flights.outbound.flight}</p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mb-4">
+                            <div className="flex items-start">
+                                <div className="bg-blue-50 p-2 rounded mr-3">
+                                    <span className="font-bold text-blue-700">去</span>
+                                </div>
+                                <div>
+                                    <p className="font-semibold">{flights.outbound.date}</p>
+                                    <p className="text-slate-500">{flights.outbound.route}</p>
+                                    <p className="text-slate-600">{flights.outbound.time} | {flights.outbound.flight}</p>
+                                </div>
+                            </div>
+                            <div className="flex items-start">
+                                <div className="bg-orange-50 p-2 rounded mr-3">
+                                    <span className="font-bold text-orange-700">回</span>
+                                </div>
+                                <div>
+                                    <p className="font-semibold">{flights.inbound.date}</p>
+                                    <p className="text-slate-500">{flights.inbound.route}</p>
+                                    <p className="text-slate-600">{flights.inbound.time} | {flights.inbound.flight}</p>
+                                </div>
+                            </div>
                         </div>
+                        
+                        {/* Passenger Info */}
+                        <div className="bg-slate-50 rounded-lg p-3 border border-slate-100">
+                            <h3 className="text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">旅客與電子機票</h3>
+                            <div className="space-y-3">
+                                {flights.passengers.map((p, idx) => (
+                                    <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between text-sm bg-white p-2 rounded border border-slate-100">
+                                        <div className="font-bold text-slate-700 mb-2 sm:mb-0 w-20">{p.name}</div>
+                                        <div className="flex-1 space-y-1 sm:space-y-0 sm:space-x-4 flex flex-col sm:flex-row">
+                                            {p.tickets.map((t, tIdx) => (
+                                                <div key={tIdx} className="flex items-center text-slate-600 bg-slate-50 px-2 py-1 rounded">
+                                                    <span className="text-xs text-slate-400 mr-2 border-r border-slate-300 pr-2">{t.type}</span>
+                                                    <span className="font-mono">{t.num}</span>
+                                                    <button 
+                                                        onClick={() => openQr(t.num, p.name)}
+                                                        className="ml-2 text-slate-400 hover:text-blue-600 transition-colors"
+                                                        title="顯示 QR Code"
+                                                    >
+                                                        <Icons.QrCode className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
-                        <div className="flex items-start">
-                        <div className="bg-orange-50 p-2 rounded mr-3">
-                            <span className="font-bold text-orange-700">回</span>
-                        </div>
-                        <div>
-                            <p className="font-semibold">{flights.inbound.date}</p>
-                            <p className="text-slate-500">{flights.inbound.route}</p>
-                            <p className="text-slate-600">{flights.inbound.time} | {flights.inbound.flight}</p>
-                        </div>
-                        </div>
-                    </div>
                     </div>
 
                     {/* Tab Content */}
@@ -423,6 +485,49 @@
                     </div>
                     )}
                 </main>
+                
+                {/* QR Code Modal */}
+                {qrModal.isOpen && (
+                    <div 
+                        className="fixed inset-0 z-[60] flex items-center justify-center p-4 modal-overlay animate-fadeIn"
+                        onClick={closeQr}
+                    >
+                        <div 
+                            className="bg-white rounded-xl shadow-2xl p-6 max-w-sm w-full mx-4 relative"
+                            onClick={e => e.stopPropagation()}
+                        >
+                            <button 
+                                onClick={closeQr}
+                                className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"
+                            >
+                                <Icons.X className="w-6 h-6" />
+                            </button>
+                            
+                            <h3 className="text-lg font-bold text-center mb-4 text-slate-800">
+                                電子機票 QR Code
+                            </h3>
+                            <div className="text-center text-sm text-slate-500 mb-4 px-2">
+                                {qrModal.title}
+                            </div>
+                            <div className="bg-white p-2 rounded-lg border-2 border-slate-100 flex justify-center mb-4">
+                                <img 
+                                    src={qrModal.data} 
+                                    alt="QR Code" 
+                                    className="w-48 h-48 object-contain"
+                                />
+                            </div>
+                            <p className="text-xs text-center text-slate-400">
+                                請向機場櫃檯或自助報到機出示此 QR Code
+                            </p>
+                            <button
+                                onClick={closeQr}
+                                className="mt-4 w-full bg-blue-600 text-white py-2 rounded-lg font-bold hover:bg-blue-700 transition"
+                            >
+                                關閉
+                            </button>
+                        </div>
+                    </div>
+                )}
 
                 {/* Footer */}
                 <footer className="bg-slate-800 text-slate-400 text-center py-6 text-sm mt-8">
