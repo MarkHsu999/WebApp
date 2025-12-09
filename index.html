@@ -1,6 +1,102 @@
-<html>
-<body>
-<A HREF=./Training531/index.html>531Training</A></br>
-<A HREF=./FFT_Spectrum_Analyzer/index.html>FFT_Spectrum_Analyzer</A>
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>專案導航儀表板</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;700&display=swap');
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+        }
+        .card-hover:hover i {
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-900 to-slate-800 min-h-screen text-slate-200 flex flex-col items-center justify-center p-6">
+
+    <div class="w-full max-w-4xl space-y-8">
+        
+        <!-- Header -->
+        <div class="text-center space-y-2 mb-12">
+            <h1 class="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400 tracking-wide">
+                My Projects
+            </h1>
+            <p class="text-slate-400 text-lg">個人工具與專案索引</p>
+        </div>
+
+        <!-- Grid Container -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+            <!-- Card 1: 531 Training -->
+            <a href="./Training531/index.html" class="group relative bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-2xl p-6 hover:border-blue-500/50 hover:bg-slate-800 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/10 hover:-translate-y-1 card-hover overflow-hidden">
+                <div class="absolute top-0 right-0 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl -mr-10 -mt-10 transition-opacity opacity-0 group-hover:opacity-100"></div>
+                
+                <div class="flex flex-col h-full justify-between space-y-4">
+                    <div class="flex items-start justify-between">
+                        <div class="p-3 bg-blue-500/10 rounded-xl text-blue-400 group-hover:text-blue-300 group-hover:bg-blue-500/20 transition-colors">
+                            <i data-lucide="dumbbell" class="w-8 h-8 transition-transform duration-300"></i>
+                        </div>
+                        <i data-lucide="arrow-up-right" class="w-5 h-5 text-slate-500 group-hover:text-blue-400 transition-colors"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-white mb-1">531 Training</h2>
+                        <p class="text-sm text-slate-400">力量訓練與健身計畫追蹤工具</p>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Card 2: FFT Spectrum Analyzer -->
+            <a href="./FFT_Spectrum_Analyzer/index.html" class="group relative bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-2xl p-6 hover:border-purple-500/50 hover:bg-slate-800 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/10 hover:-translate-y-1 card-hover overflow-hidden">
+                <div class="absolute top-0 right-0 w-24 h-24 bg-purple-500/10 rounded-full blur-2xl -mr-10 -mt-10 transition-opacity opacity-0 group-hover:opacity-100"></div>
+                
+                <div class="flex flex-col h-full justify-between space-y-4">
+                    <div class="flex items-start justify-between">
+                        <div class="p-3 bg-purple-500/10 rounded-xl text-purple-400 group-hover:text-purple-300 group-hover:bg-purple-500/20 transition-colors">
+                            <i data-lucide="activity" class="w-8 h-8 transition-transform duration-300"></i>
+                        </div>
+                        <i data-lucide="arrow-up-right" class="w-5 h-5 text-slate-500 group-hover:text-purple-400 transition-colors"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-white mb-1">Spectrum Analyzer</h2>
+                        <p class="text-sm text-slate-400">FFT 快速傅立葉變換頻譜分析</p>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Card 3: EInk Converter -->
+            <a href="./EInkConVerter/index.html" class="group relative bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-2xl p-6 hover:border-emerald-500/50 hover:bg-slate-800 transition-all duration-300 hover:shadow-lg hover:shadow-emerald-500/10 hover:-translate-y-1 card-hover overflow-hidden">
+                <div class="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl -mr-10 -mt-10 transition-opacity opacity-0 group-hover:opacity-100"></div>
+                
+                <div class="flex flex-col h-full justify-between space-y-4">
+                    <div class="flex items-start justify-between">
+                        <div class="p-3 bg-emerald-500/10 rounded-xl text-emerald-400 group-hover:text-emerald-300 group-hover:bg-emerald-500/20 transition-colors">
+                            <i data-lucide="image" class="w-8 h-8 transition-transform duration-300"></i>
+                        </div>
+                        <i data-lucide="arrow-up-right" class="w-5 h-5 text-slate-500 group-hover:text-emerald-400 transition-colors"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-white mb-1">E-Ink Converter</h2>
+                        <p class="text-sm text-slate-400">電子墨水螢幕圖片格式轉換器</p>
+                    </div>
+                </div>
+            </a>
+
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center mt-16 pt-8 border-t border-slate-800/50">
+            <p class="text-slate-500 text-sm">© Local Development Dashboard</p>
+        </div>
+
+    </div>
+
+    <!-- Initialize Icons -->
+    <script>
+        lucide.createIcons();
+    </script>
 </body>
 </html>
