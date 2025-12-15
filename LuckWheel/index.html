@@ -70,6 +70,16 @@
                 </label>
             </div>
 
+            <!-- 全選/取消按鈕區 (新功能) -->
+            <div class="flex gap-2 mb-2 px-1">
+                <button id="select-all-btn" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-400 hover:text-white text-xs py-1.5 rounded transition-colors flex items-center justify-center gap-1 border border-slate-600">
+                    <i data-lucide="check-square" class="w-3 h-3"></i> 全選
+                </button>
+                <button id="unselect-all-btn" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-400 hover:text-white text-xs py-1.5 rounded transition-colors flex items-center justify-center gap-1 border border-slate-600">
+                    <i data-lucide="square" class="w-3 h-3"></i> 全部取消
+                </button>
+            </div>
+
             <!-- 列表區域 -->
             <div id="items-list" class="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar pb-10">
                 <!-- 列表項目將由 JS 生成 -->
@@ -166,6 +176,8 @@
             input: document.getElementById('new-item-input'),
             removeCheckbox: document.getElementById('remove-on-win-checkbox'),
             removeText: document.getElementById('remove-on-win-text'),
+            selectAllBtn: document.getElementById('select-all-btn'),
+            unselectAllBtn: document.getElementById('unselect-all-btn'),
             wheelSvg: document.getElementById('wheel-svg'),
             wheelLayer: document.getElementById('wheel-rotate-layer'),
             emptyState: document.getElementById('empty-state'),
@@ -360,6 +372,20 @@
                 .replace(/"/g, "&quot;")
                 .replace(/'/g, "&#039;");
         }
+
+        // 新增：全選按鈕
+        els.selectAllBtn.addEventListener('click', () => {
+            state.items = state.items.map(item => ({ ...item, checked: true }));
+            renderList();
+            renderWheel();
+        });
+
+        // 新增：全部取消按鈕
+        els.unselectAllBtn.addEventListener('click', () => {
+            state.items = state.items.map(item => ({ ...item, checked: false }));
+            renderList();
+            renderWheel();
+        });
 
         els.addForm.addEventListener('submit', (e) => {
             e.preventDefault();
