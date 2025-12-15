@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>幸運大轉盤</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* 自定義捲軸樣式 */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        /* 避免選取文字 */
+        .no-select {
+            user-select: none;
+            -webkit-user-select: none;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 font-sans overflow-hidden">
+
+    <div id="app" class="min-h-screen flex flex-col md:flex-row h-screen">
+        
+        <!-- 左側：控制面板 -->
+        <div class="w-full md:w-1/3 lg:w-1/4 bg-slate-800 p-6 flex flex-col shadow-xl z-20 border-r border-slate-700 h-1/2 md:h-full overflow-hidden">
+            <h1 class="text-2xl font-bold mb-6 flex items-center gap-2 text-yellow-400">
+                <i data-lucide="refresh-cw" class="w-6 h-6"></i>
+                幸運大轉盤
+            </h1>
+
+            <!-- 新增表單 -->
+            <form id="add-form" class="flex gap-2 mb-4">
+                <input
+                    type="text"
+                    id="new-item-input"
+                    placeholder="輸入名字..."
+                    class="flex-1 bg-slate-700 border border-slate-600 rounded px-3 py-2 text-sm focus:outline-none focus:border-yellow-400 text-white"
+                />
+                <button 
+                    type="submit"
+                    class="bg-yellow-500 hover:bg-yellow-600 text-slate-900 p-2 rounded transition-colors"
+                >
+                    <i data-lucide="plus" class="w-5 h-5"></i>
+                </button>
+            </form>
+
+            <!-- 自動剔除開關 -->
+            <div class="mb-4 px-1">
+                <label class="flex items-center space-x-2 cursor-pointer select-none group">
+                    <div class="relative">
+                        <input type="checkbox" id="remove-on-win-checkbox" class="sr-only peer">
+                        <div class="w-10 h-6 bg-slate-600 rounded-full peer peer-focus:ring-2 peer-focus:ring-yellow-400/50 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-500 transition-colors"></div>
+                    </div>
+                    <span id="remove-on-win-text" class="text-sm transition-colors text-slate-400 group-hover:text-slate-300">
+                        選中後自動剔除
+                    </span>
+                </label>
+            </div>
+
+            <!-- 列表區域 -->
+            <div id="items-list" class="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar pb-10">
+                <!-- 列表項目將由 JS 生成 -->
+            </div>
+
+            <div id="stats-text" class="mt-4 text-xs text-slate-500 text-center">
+                <!-- 統計文字由 JS 更新 -->
+            </div>
+        </div>
+
+        <!-- 右側：轉盤顯示區 -->
+        <div class="flex-1 relative flex flex-col items-center justify-center bg-slate-900 p-4 md:p-10 overflow-hidden h-1/2 md:h-full">
+            
+            <!-- 結果顯示 -->
+            <div id="winner-display" class="absolute top-10 md:top-12 z-10 transition-all duration-500 transform scale-50 opacity-0 pointer-events-none">
+                <div class="bg-yellow-400 text-slate-900 px-8 py-4 rounded-full shadow-lg shadow-yellow-400/20 text-center">
+                    <div class="text-sm font-bold uppercase tracking-wider mb-1">Result</div>
+                    <div class="text-3xl md:text-4xl font-black flex items-center justify-center gap-3">
+                        <i data-lucide="trophy" class="w-8 h-8"></i>
+                        <span id="winner-name"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 轉盤容器 -->
+            <div class="relative w-full max-w-[300px] md:max-w-[500px] aspect-square flex items-center justify-center">
+                
+                <!-- 指針 (右側 3點鐘方向) -->
+                <div class="absolute top-1/2 -right-6 -translate-y-1/2 z-20 filter drop-shadow-lg">
+                    <!-- CSS 三角形 -->
+                    <div class="w-0 h-0 border-t-[15px] border-t-transparent border-b-[15px] border-b-transparent border-r-[30px] border-r-red-500"></div>
+                </div>
+
+                <!-- 轉盤本體 (旋轉層) -->
+                <div 
+                    id="wheel-rotate-layer"
+                    class="w-full h-full rounded-full shadow-2xl border-4 border-slate-700 relative overflow-hidden transform"
+                    style="transform: rotate(0deg);"
+                >
+                    <svg id="wheel-svg" viewBox="-1 -1 2 2" class="w-full h-full transform -rotate-90">
+                        <!-- SVG 內容由 JS 生成 -->
+                    </svg>
+                    
+                    <!-- 空狀態提示 -->
+                    <div id="empty-state" class="hidden w-full h-full bg-slate-800 flex items-center justify-center text-slate-500 font-bold absolute top-0 left-0">
+                        請選擇項目
+                    </div>
+                </div>
+
+                <!-- 中間的按鈕 -->
+                <button
+                    id="spin-btn"
+                    class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-20 h-20 rounded-full border-4 border-slate-800 flex items-center justify-center font-bold text-lg shadow-xl z-20 transition-all bg-white text-slate-900 hover:scale-110 active:scale-95 hover:bg-yellow-400"
+                >
+                    SPIN
+                </button>
+            </div>
+            
+            <!-- 操作提示 -->
+            <p id="hint-text" class="mt-8 text-slate-400 text-sm hidden md:block">
+                點擊中央按鈕開始轉動
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // --- 狀態管理 ---
+        const state = {
+            items: [
+                { id: 1, text: '吃拉麵', checked: true },
+                { id: 2, text: '喝飲料', checked: true },
+                { id: 3, text: '伏地挺身', checked: true },
+                { id: 4, text: '唱首歌', checked: true },
+                { id: 5, text: '再轉一次', checked: true },
+                { id: 6, text: '下一位', checked: true },
+            ],
+            isSpinning: false,
+            rotation: 0,
+            winner: null,
+            removeOnWin: false
+        };
+
+        const COLORS = [
+            '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', 
+            '#FFEEAD', '#D4A5A5', '#9B59B6', '#3498DB',
+            '#E67E22', '#2ECC71', '#F1C40F', '#E74C3C'
+        ];
+
+        // --- DOM 元素 ---
+        const els = {
+            itemList: document.getElementById('items-list'),
+            statsText: document.getElementById('stats-text'),
+            addForm: document.getElementById('add-form'),
+            input: document.getElementById('new-item-input'),
+            removeCheckbox: document.getElementById('remove-on-win-checkbox'),
+            removeText: document.getElementById('remove-on-win-text'),
+            wheelSvg: document.getElementById('wheel-svg'),
+            wheelLayer: document.getElementById('wheel-rotate-layer'),
+            emptyState: document.getElementById('empty-state'),
+            spinBtn: document.getElementById('spin-btn'),
+            hintText: document.getElementById('hint-text'),
+            winnerDisplay: document.getElementById('winner-display'),
+            winnerName: document.getElementById('winner-name'),
+        };
+
+        // --- 輔助函式 ---
+        function getCoordinatesForPercent(percent) {
+            const x = Math.cos(2 * Math.PI * percent);
+            const y = Math.sin(2 * Math.PI * percent);
+            return [x, y];
+        }
+
+        // --- 渲染邏輯 ---
+
+        function renderList() {
+            els.itemList.innerHTML = '';
+            
+            if (state.items.length === 0) {
+                els.itemList.innerHTML = '<div class="text-center text-slate-500 py-8">名單是空的，請新增項目</div>';
+            } else {
+                state.items.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = `flex items-center justify-between p-3 rounded border transition-all duration-300 ${item.checked ? 'bg-slate-700 border-slate-600' : 'bg-slate-800/50 border-slate-700 opacity-50'}`;
+                    
+                    div.innerHTML = `
+                        <div class="flex items-center gap-3 overflow-hidden cursor-pointer flex-1" onclick="toggleItem(${item.id})">
+                            <input
+                                type="checkbox"
+                                ${item.checked ? 'checked' : ''}
+                                class="w-5 h-5 rounded border-gray-500 text-yellow-500 focus:ring-yellow-500 cursor-pointer pointer-events-none"
+                            />
+                            <span class="truncate no-select ${!item.checked ? 'line-through text-slate-500' : ''}">${escapeHtml(item.text)}</span>
+                        </div>
+                        <button onclick="deleteItem(${item.id})" class="text-slate-400 hover:text-red-400 transition-colors p-1">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    `;
+                    els.itemList.appendChild(div);
+                });
+            }
+
+            const activeCount = state.items.filter(i => i.checked).length;
+            els.statsText.textContent = `共有 ${state.items.length} 個項目，選中 ${activeCount} 個`;
+            
+            // 更新圖示
+            lucide.createIcons();
+        }
+
+        function renderWheel() {
+            const activeItems = state.items.filter(item => item.checked);
+            const totalSlices = activeItems.length;
+
+            els.wheelSvg.innerHTML = '';
+
+            if (totalSlices === 0) {
+                els.emptyState.classList.remove('hidden');
+                els.wheelSvg.classList.add('hidden');
+                els.spinBtn.disabled = true;
+                els.spinBtn.classList.add('bg-slate-700', 'text-slate-500', 'cursor-not-allowed');
+                els.spinBtn.classList.remove('bg-white', 'text-slate-900', 'hover:bg-yellow-400', 'hover:scale-110');
+                els.spinBtn.textContent = 'SPIN';
+                els.hintText.textContent = '請先在左側勾選至少一個項目';
+                return;
+            }
+
+            els.emptyState.classList.add('hidden');
+            els.wheelSvg.classList.remove('hidden');
+            
+            // 更新按鈕狀態 (如果不在旋轉中)
+            if (!state.isSpinning) {
+                els.spinBtn.disabled = false;
+                els.spinBtn.classList.remove('bg-slate-700', 'text-slate-500', 'cursor-not-allowed', 'scale-95');
+                els.spinBtn.classList.add('bg-white', 'text-slate-900', 'hover:scale-110', 'active:scale-95', 'hover:bg-yellow-400');
+                els.spinBtn.textContent = 'SPIN';
+                els.hintText.textContent = '點擊中央按鈕開始轉動';
+            }
+
+            activeItems.forEach((item, index) => {
+                const startPercent = index / totalSlices;
+                const endPercent = (index + 1) / totalSlices;
+                
+                const [startX, startY] = getCoordinatesForPercent(startPercent);
+                const [endX, endY] = getCoordinatesForPercent(endPercent);
+                
+                const color = COLORS[index % COLORS.length];
+                const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+
+                // 只有一個項目的情況 (整圓)
+                if (totalSlices === 1) {
+                    const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                    circle.setAttribute("cx", "0");
+                    circle.setAttribute("cy", "0");
+                    circle.setAttribute("r", "1");
+                    circle.setAttribute("fill", color);
+                    g.appendChild(circle);
+
+                    const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                    text.setAttribute("x", "0");
+                    text.setAttribute("y", "0");
+                    text.setAttribute("text-anchor", "middle");
+                    text.setAttribute("dominant-baseline", "middle");
+                    text.setAttribute("transform", "rotate(90)");
+                    text.setAttribute("class", "text-[0.15px] font-bold fill-white pointer-events-none select-none");
+                    text.style.fontSize = "0.15px";
+                    text.style.fill = "white";
+                    text.style.fontWeight = "bold";
+                    text.textContent = item.text;
+                    g.appendChild(text);
+                } else {
+                    // 扇形
+                    const largeArcFlag = endPercent - startPercent > 0.5 ? 1 : 0;
+                    const pathData = [
+                        `M 0 0`,
+                        `L ${startX} ${startY}`,
+                        `A 1 1 0 ${largeArcFlag} 1 ${endX} ${endY}`,
+                        `Z`
+                    ].join(' ');
+
+                    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                    path.setAttribute("d", pathData);
+                    path.setAttribute("fill", color);
+                    path.setAttribute("stroke", "#1e293b");
+                    path.setAttribute("stroke-width", "0.01");
+                    g.appendChild(path);
+
+                    // 文字
+                    const midPercent = (startPercent + endPercent) / 2;
+                    const [midX, midY] = getCoordinatesForPercent(midPercent);
+                    const textX = midX * 0.65;
+                    const textY = midY * 0.65;
+                    const rotateAngle = midPercent * 360;
+
+                    const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                    text.setAttribute("x", textX);
+                    text.setAttribute("y", textY);
+                    text.setAttribute("text-anchor", "middle");
+                    text.setAttribute("dominant-baseline", "middle");
+                    text.setAttribute("transform", `rotate(${rotateAngle} ${textX} ${textY})`);
+                    text.style.fontSize = "0.1px";
+                    text.style.fill = "white";
+                    text.style.fontWeight = "bold";
+                    text.style.pointerEvents = "none";
+                    text.style.userSelect = "none";
+                    
+                    const displayText = item.text.length > 8 ? item.text.substring(0, 8) + '..' : item.text;
+                    text.textContent = displayText;
+                    g.appendChild(text);
+                }
+
+                els.wheelSvg.appendChild(g);
+            });
+        }
+
+        function updateRemoveCheckboxUI() {
+            if (state.removeOnWin) {
+                els.removeText.classList.remove('text-slate-400');
+                els.removeText.classList.add('text-yellow-400', 'font-medium');
+            } else {
+                els.removeText.classList.add('text-slate-400');
+                els.removeText.classList.remove('text-yellow-400', 'font-medium');
+            }
+        }
+
+        // --- 事件處理 ---
+
+        function toggleItem(id) {
+            state.items = state.items.map(item => 
+                item.id === id ? { ...item, checked: !item.checked } : item
+            );
+            renderList();
+            renderWheel();
+        }
+
+        function deleteItem(id) {
+            // 防止觸發父層點擊
+            event.stopPropagation();
+            state.items = state.items.filter(item => item.id !== id);
+            renderList();
+            renderWheel();
+        }
+
+        function escapeHtml(text) {
+            if (!text) return text;
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        els.addForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const text = els.input.value.trim();
+            if (!text) return;
+
+            state.items.push({
+                id: Date.now(),
+                text: text,
+                checked: true
+            });
+            els.input.value = '';
+            renderList();
+            renderWheel();
+        });
+
+        els.removeCheckbox.addEventListener('change', (e) => {
+            state.removeOnWin = e.target.checked;
+            updateRemoveCheckboxUI();
+        });
+
+        els.spinBtn.addEventListener('click', () => {
+            const activeItems = state.items.filter(item => item.checked);
+            const totalSlices = activeItems.length;
+
+            if (state.isSpinning || totalSlices < 1) return;
+
+            // 重置贏家顯示
+            state.winner = null;
+            els.winnerDisplay.classList.remove('scale-100', 'opacity-100');
+            els.winnerDisplay.classList.add('scale-50', 'opacity-0');
+
+            // 設置旋轉狀態
+            state.isSpinning = true;
+            els.spinBtn.disabled = true;
+            els.spinBtn.textContent = '...';
+            els.spinBtn.classList.add('bg-slate-700', 'text-slate-400', 'cursor-not-allowed', 'scale-95');
+            els.spinBtn.classList.remove('bg-white', 'text-slate-900', 'hover:scale-110', 'hover:bg-yellow-400');
+
+            // 計算旋轉
+            const timeSeed = (Date.now() % 1000) / 1000;
+            const randomFactor = (Math.random() + timeSeed) % 1;
+            const randomSpins = 5 + randomFactor * 5;
+            const randomDegree = Math.floor(Math.random() * 360);
+            const newRotation = state.rotation + (randomSpins * 360) + randomDegree;
+            
+            state.rotation = newRotation;
+
+            // 應用 CSS Transition
+            els.wheelLayer.style.transition = 'transform 4s cubic-bezier(0.2, 0.8, 0.2, 1)';
+            els.wheelLayer.style.transform = `rotate(${state.rotation}deg)`;
+
+            // 4秒後處理結果
+            setTimeout(() => {
+                state.isSpinning = false;
+                els.wheelLayer.style.transition = 'none'; // 停止動畫屬性以便未來可以立即重置(若需要)
+                
+                // 恢復按鈕
+                els.spinBtn.disabled = false;
+                els.spinBtn.textContent = 'SPIN';
+                els.spinBtn.classList.remove('bg-slate-700', 'text-slate-400', 'cursor-not-allowed', 'scale-95');
+                els.spinBtn.classList.add('bg-white', 'text-slate-900', 'hover:scale-110', 'active:scale-95', 'hover:bg-yellow-400');
+
+                // 計算結果
+                const actualDegree = newRotation % 360;
+                const sliceSize = 360 / totalSlices;
+                const pointerAngle = 90; // 3點鐘方向
+                
+                // 計算邏輯
+                const winningIndex = Math.floor((((pointerAngle - actualDegree) % 360 + 360) % 360) / sliceSize);
+                const winnerItem = activeItems[winningIndex];
+
+                if (winnerItem) {
+                    state.winner = winnerItem.text;
+                    els.winnerName.textContent = state.winner;
+                    els.winnerDisplay.classList.remove('scale-50', 'opacity-0');
+                    els.winnerDisplay.classList.add('scale-100', 'opacity-100');
+
+                    // 自動剔除邏輯
+                    if (state.removeOnWin) {
+                        setTimeout(() => {
+                            state.items = state.items.map(item => 
+                                item.id === winnerItem.id ? { ...item, checked: false } : item
+                            );
+                            renderList();
+                            renderWheel();
+                        }, 2000);
+                    }
+                }
+
+            }, 4000);
+        });
+
+        // --- 初始化 ---
+        lucide.createIcons();
+        renderList();
+        renderWheel();
+        updateRemoveCheckboxUI();
+
+    </script>
+</body>
+</html>
