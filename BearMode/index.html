@@ -13,7 +13,7 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
     <style>
-        body { background-color: #111827; }
+        body { background-color: #111827; transition: background-color 0.3s; }
         .scrollbar-hide::-webkit-scrollbar {
             display: none;
         }
@@ -21,15 +21,97 @@
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
+
+        /* E-ink Mode Specific Styles */
+        .e-ink-mode {
+            background-color: #ffffff !important;
+            color: #000000 !important;
+        }
+        
+        /* 強制所有子元素在 E-ink 下的邊框與陰影行為 */
+        .e-ink-mode * {
+            border-color: #000000 !important;
+            box-shadow: none !important;
+            text-shadow: none !important;
+        }
+
+        /* 強制文字轉黑，但排除帶有特定背景的元素 */
+        .e-ink-mode .text-white:not(.bg-black *):not(.bg-black),
+        .e-ink-mode .text-gray-100:not(.bg-black *),
+        .e-ink-mode .text-gray-200,
+        .e-ink-mode .text-gray-300,
+        .e-ink-mode .text-gray-400,
+        .e-ink-mode .text-orange-400,
+        .e-ink-mode .text-orange-500,
+        .e-ink-mode .text-yellow-400,
+        .e-ink-mode .text-green-400,
+        .e-ink-mode .text-green-500 {
+            color: #000000 !important;
+        }
+
+        /* 背景轉白並加框 */
+        .e-ink-mode .bg-gray-800, 
+        .e-ink-mode .bg-gray-900,
+        .e-ink-mode .bg-gray-700,
+        .e-ink-mode .bg-orange-900\/20,
+        .e-ink-mode .bg-gray-700\/50 {
+            background-color: #ffffff !important;
+            border: 1px solid #000000 !important;
+        }
+
+        /* 標題與重點區塊轉淺灰 */
+        .e-ink-mode .bg-orange-600,
+        .e-ink-mode .bg-blue-600,
+        .e-ink-mode .bg-red-600,
+        .e-ink-mode .bg-green-600,
+        .e-ink-mode .bg-yellow-600,
+        .e-ink-mode .bg-purple-600 {
+            background-color: #f0f0f0 !important;
+            border: 2px solid #000000 !important;
+        }
+
+        /* 進度條改為純黑 */
+        .e-ink-mode .progress-bar-fill {
+            background-color: #000000 !important;
+        }
+
+        /* 圖片處理 */
+        .e-ink-mode img {
+            filter: grayscale(100%) contrast(1.5);
+            border-bottom: 1px solid #000000;
+        }
+
+        /* 已完成狀態與特定黑底元素：確保文字為白 */
+        .e-ink-mode .bg-black {
+            background-color: #000000 !important;
+            color: #ffffff !important;
+        }
+        .e-ink-mode .bg-black * {
+            color: #ffffff !important;
+        }
+
+        /* 已完成狀態按鈕：黑底白字以示區別 */
+        .e-ink-mode .bg-green-600\/20 {
+            background-color: #000000 !important;
+            color: #ffffff !important;
+        }
+        .e-ink-mode .bg-green-600\/20 * {
+            color: #ffffff !important;
+        }
+
+        /* 普通按鈕加強邊框 */
+        .e-ink-mode button {
+            border: 1px solid #000000 !important;
+        }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState } = React;
+        const { useState, useMemo, useEffect } = React;
 
-        // --- Icons (SVG Components) ---
+        // --- Icons ---
         const Dumbbell = ({ className }) => (
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m6.5 6.5 11 11"/><path d="m21 21-1-1"/><path d="m3 3 1 1"/><path d="m18 22 4-4"/><path d="m2 6 4-4"/><path d="m3 10 7.972-7.972a4 4 0 0 1 5.656 5.656L8.657 15.657"/><path d="m6 21 7.972-7.972a4 4 0 0 1 5.656 5.656L11.657 23.657"/></svg>
         );
@@ -51,6 +133,9 @@
         const Scale = ({ className }) => (
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>
         );
+        const CheckCircle = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        );
         const XIcon = ({ className }) => (
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         );
@@ -65,56 +150,11 @@
                 focus: "上胸飽滿度、內側厚度",
                 color: "bg-red-600",
                 exercises: [
-                    {
-                        name: "上斜啞鈴飛鳥 (Incline Fly)",
-                        sets: "3",
-                        reps: "12-15",
-                        weight: "7.5-12.5kg",
-                        rest: "60s",
-                        img: "./img/01/01_上斜啞鈴飛鳥 (Incline Fly).png",
-                        tip: "預先疲勞法：先做這個讓胸充血。椅背 30-45 度。感受胸肌被拉開。",
-                        equipment: "啞鈴 + 上斜椅"
-                    },
-                    {
-                        name: "上斜啞鈴臥推 (Incline Press)",
-                        sets: "4",
-                        reps: "8-12",
-                        weight: "17.5-22.5kg",
-                        rest: "90s",
-                        img: "./img/01/02_上斜啞鈴臥推 (Incline Press).png",
-                        tip: "慢下快上：下放時默數 3-4 秒。這是突破 22.5kg 限制的關鍵。",
-                        equipment: "啞鈴 + 上斜椅"
-                    },
-                    {
-                        name: "平胸啞鈴擠壓臥推 (Squeeze Press)",
-                        sets: "3",
-                        reps: "10-15",
-                        weight: "12.5-17.5kg",
-                        rest: "60s",
-                        img: "./img/01/03_平胸啞鈴擠壓臥推 (Squeeze Press).png",
-                        tip: "製造厚度：啞鈴全程緊貼互推，用力擠壓胸肌內側。",
-                        equipment: "啞鈴 + 平板椅"
-                    },
-                    {
-                        name: "仰臥過頭上拉 (Dumbbell Pullover)",
-                        sets: "3",
-                        reps: "12-15",
-                        weight: "15-20kg",
-                        rest: "60s",
-                        img: "./img/01/04_仰臥過頭上拉 (Dumbbell Pullover).png",
-                        tip: "擴展胸廓：只用上背部靠在椅子上，感受肋骨與胸廓被拉開。",
-                        equipment: "單顆啞鈴 + 椅子"
-                    },
-                    {
-                        name: "加重/上斜伏地挺身 (Weighted Push-up)",
-                        sets: "3",
-                        reps: "力竭",
-                        weight: "自重 (+5-10kg)",
-                        rest: "60s",
-                        img: "./img/01/05_加重上斜伏地挺身 (Weighted Push-up).png",
-                        tip: "最後榨乾：腳高頭低。覺得太輕可以背背包加重。",
-                        equipment: "椅子 + 自身體重"
-                    }
+                    { name: "上斜啞鈴飛鳥 (Incline Fly)", sets: 3, reps: "12-15", weight: "7.5-12.5kg", rest: "60s", img: "./img/01/01_上斜啞鈴飛鳥 (Incline Fly).png", tip: "預先疲勞法：先做這個讓胸充血。椅背 30-45 度。感受胸肌被拉開。", equipment: "啞鈴 + 上斜椅" },
+                    { name: "上斜啞鈴臥推 (Incline Press)", sets: 4, reps: "8-12", weight: "17.5-22.5kg", rest: "90s", img: "./img/01/02_上斜啞鈴臥推 (Incline Press).png", tip: "慢下快上：下放時默數 3-4 秒。這是突破 22.5kg 限制的關鍵。", equipment: "啞鈴 + 上斜椅" },
+                    { name: "平胸啞鈴擠壓臥推 (Squeeze Press)", sets: 3, reps: "10-15", weight: "12.5-17.5kg", rest: "60s", img: "./img/01/03_平胸啞鈴擠壓臥推 (Squeeze Press).png", tip: "製造厚度：啞鈴全程緊貼互推，用力擠壓胸肌內側。", equipment: "啞鈴 + 平板椅" },
+                    { name: "仰臥過頭上拉 (Dumbbell Pullover)", sets: 3, reps: "12-15", weight: "15-20kg", rest: "60s", img: "./img/01/04_仰臥過頭上拉 (Dumbbell Pullover).png", tip: "擴展胸廓：只用上背部靠在椅子上，感受肋骨與胸廓被拉開。", equipment: "單顆啞鈴 + 椅子" },
+                    { name: "加重/上斜伏地挺身 (Weighted Push-up)", sets: 3, reps: "力竭", weight: "自重 (+5-10kg)", rest: "60s", img: "./img/01/05_加重上斜伏地挺身 (Weighted Push-up).png", tip: "最後榨乾：腳高頭低。覺得太輕可以背背包加重。", equipment: "椅子 + 自身體重" }
                 ]
             },
             Tue: {
@@ -122,205 +162,40 @@
                 focus: "背部寬度、斜方肌山峰",
                 color: "bg-blue-600",
                 exercises: [
-                    {
-                        name: "單手啞鈴划船 (Kroc Row Style)",
-                        sets: "4",
-                        reps: "15-20+",
-                        weight: "20-22.5kg",
-                        rest: "60s",
-                        img: "./img/02/01_單手啞鈴划船 (Kroc Row Style).png",
-                        tip: "爆發力：允許身體些微借力，重點是次數做滿，直到握不住為止。",
-                        equipment: "重啞鈴 + 椅子支撐"
-                    },
-                    {
-                        name: "上斜俯臥划船 (Chest Supported Row)",
-                        sets: "4",
-                        reps: "12-15",
-                        weight: "15-20kg",
-                        rest: "60s",
-                        img: "./img/02/02_上斜俯臥划船 (Chest Supported Row).png",
-                        tip: "上背厚度：趴在斜板上，手肘微開，肩胛骨用力夾緊。",
-                        equipment: "啞鈴 + 上斜椅"
-                    },
-                    {
-                        name: "上斜俯臥聳肩 (Prone Shrug)",
-                        sets: "3",
-                        reps: "15-20",
-                        weight: "12.5-17.5kg",
-                        rest: "45s",
-                        img: "./img/02/03_上斜俯臥聳肩 (Prone Shrug).png",
-                        tip: "細節雕塑：維持趴姿，手臂下垂，只動肩膀往後縮。",
-                        equipment: "啞鈴 + 上斜椅"
-                    },
-                    {
-                        name: "站姿啞鈴聳肩 (Standing Shrug)",
-                        sets: "5",
-                        reps: "15-20",
-                        weight: "22.5kg (最重)",
-                        rest: "45s",
-                        img: "./img/02/04_站姿啞鈴聳肩 (Standing Shrug).png",
-                        tip: "3秒頂峰：每一下聳到最高點都要停 3 秒。這是練出粗脖子的關鍵。",
-                        equipment: "重啞鈴"
-                    },
-                    {
-                        name: "俯身反向飛鳥 (Rear Delt Fly)",
-                        sets: "3",
-                        reps: "15-20",
-                        weight: "5-10kg",
-                        rest: "60s",
-                        img: "./img/02/05_俯身反向飛鳥 (Rear Delt Fly).png",
-                        tip: "3D 肩膀：針對後三角肌，讓肩膀看起來更圓潤。",
-                        equipment: "輕啞鈴"
-                    },
-                    {
-                        name: "啞鈴羅馬尼亞硬舉 (RDL)",
-                        sets: "3",
-                        reps: "12-15",
-                        weight: "20-22.5kg",
-                        rest: "90s",
-                        img: "./img/02/06_啞鈴羅馬尼亞硬舉 (RDL).png",
-                        tip: "慢速離心：下放 4 秒，感受腿後與下背的拉伸。",
-                        equipment: "啞鈴"
-                    }
+                    { name: "單手啞鈴划船 (Kroc Row)", sets: 4, reps: "15-20+", weight: "20-22.5kg", rest: "60s", img: "./img/02/01_單手啞鈴划船 (Kroc Row Style).png", tip: "爆發力：允許身體些微借力，重點是次數做滿，直到握不住為止。", equipment: "重啞鈴 + 椅子支撐" },
+                    { name: "上斜俯臥划船 (Chest Supported Row)", sets: 4, reps: "12-15", weight: "15-20kg", rest: "60s", img: "./img/02/02_上斜俯臥划船 (Chest Supported Row).png", tip: "上背厚度：趴在斜板上，手肘微開，肩胛骨用力夾緊。", equipment: "啞鈴 + 上斜椅" },
+                    { name: "上斜俯臥聳肩 (Prone Shrug)", sets: 3, reps: "15-20", weight: "12.5-17.5kg", rest: "45s", img: "./img/02/03_上斜俯臥聳肩 (Prone Shrug).png", tip: "細節雕塑：維持趴姿，手臂下垂，只動肩膀往後縮。", equipment: "啞鈴 + 上斜椅" },
+                    { name: "站姿啞鈴聳肩 (Standing Shrug)", sets: 5, reps: "15-20", weight: "22.5kg", rest: "45s", img: "./img/02/04_站姿啞鈴聳肩 (Standing Shrug).png", tip: "3秒頂峰：每一下聳到最高點都要停 3 秒。這是練出粗脖子的關鍵。", equipment: "重啞鈴" },
+                    { name: "俯身反向飛鳥 (Rear Delt Fly)", sets: 3, reps: "15-20", weight: "5-10kg", rest: "60s", img: "./img/02/05_俯身反向飛鳥 (Rear Delt Fly).png", tip: "3D 肩膀：針對後三角肌，讓肩膀看起來更圓潤。", equipment: "輕啞鈴" },
+                    { name: "啞鈴羅馬尼亞硬舉 (RDL)", sets: 3, reps: "12-15", weight: "20-22.5kg", rest: "90s", img: "./img/02/06_啞鈴羅馬尼亞硬舉 (RDL).png", tip: "慢速離心：下放 4 秒，感受腿後與下背的拉伸。", equipment: "啞鈴" }
                 ]
             },
-            Wed: {
-                title: "主動恢復日 (Active Recovery)",
-                focus: "伸展、散步、放鬆",
-                color: "bg-green-600",
-                isRest: true,
-                tips: [
-                    "這是為了週四練腿做準備。",
-                    "進行 20-30 分鐘的快走或輕度有氧。",
-                    "針對背部與髖關節進行伸展。"
-                ]
-            },
+            Wed: { title: "主動恢復日 (Active Recovery)", focus: "伸展、散步、放鬆", color: "bg-green-600", isRest: true, tips: ["這是為了週四練腿做準備。", "進行 20-30 分鐘的快走或輕度有氧。", "針對背部與髖關節進行伸展。"] },
             Thu: {
                 title: "腿部基礎 (Legs Foundation)",
                 focus: "下肢力量、身體比例平衡",
                 color: "bg-yellow-600",
                 exercises: [
-                    {
-                        name: "高腳杯深蹲 (Goblet Squat)",
-                        sets: "4",
-                        reps: "12-15",
-                        weight: "20-22.5kg",
-                        rest: "90s",
-                        img: "./img/04/01_高腳杯深蹲 (Goblet Squat).png",
-                        tip: "核心穩定：抱緊啞鈴在胸前，背部打直蹲深。",
-                        equipment: "單顆重啞鈴"
-                    },
-                    {
-                        name: "啞鈴分腿蹲 (Bulgarian Split Squat)",
-                        sets: "3",
-                        reps: "10-12 (每腿)",
-                        weight: "10-15kg",
-                        rest: "90s",
-                        img: "./img/04/02_啞鈴分腿蹲 (Bulgarian Split Squat).png",
-                        tip: "痛苦但有效：後腳抬高放在椅子上，專注前腿發力。",
-                        equipment: "啞鈴 + 椅子"
-                    },
-                    {
-                        name: "啞鈴直膝硬舉 (Stiff Leg Deadlift)",
-                        sets: "3",
-                        reps: "12-15",
-                        weight: "17.5-22.5kg",
-                        rest: "60s",
-                        img: "./img/04/03_啞鈴直膝硬舉 (Stiff Leg Deadlift).png",
-                        tip: "腿後側鏈：膝蓋微彎鎖死，用屁股往後推。",
-                        equipment: "啞鈴"
-                    },
-                    {
-                        name: "啞鈴提踵 (Calf Raise)",
-                        sets: "4",
-                        reps: "20-25",
-                        weight: "15-22.5kg",
-                        rest: "45s",
-                        img: "./img/04/04_啞鈴羅馬尼亞硬舉 (RDL).png",
-                        tip: "單手扶牆，單腳或雙腳墊腳尖，練出小腿菱形。",
-                        equipment: "啞鈴"
-                    }
+                    { name: "高腳杯深蹲 (Goblet Squat)", sets: 4, reps: "12-15", weight: "20-22.5kg", rest: "90s", img: "./img/04/01_高腳杯深蹲 (Goblet Squat).png", tip: "核心穩定：抱緊啞鈴在胸前，背部打直蹲深。", equipment: "單顆重啞鈴" },
+                    { name: "啞鈴分腿蹲 (Split Squat)", sets: 3, reps: "10-12 (每腿)", weight: "10-15kg", rest: "90s", img: "./img/04/02_啞鈴分腿蹲 (Bulgarian Split Squat).png", tip: "痛苦但有效：後腳抬高放在椅子上，專注前腿發力。", equipment: "啞鈴 + 椅子" },
+                    { name: "啞鈴直膝硬舉 (Stiff Leg DL)", sets: 3, reps: "12-15", weight: "17.5-22.5kg", rest: "60s", img: "./img/04/03_啞鈴直膝硬舉 (Stiff Leg Deadlift).png", tip: "腿後側鏈：膝蓋微彎鎖死，用屁股往後推。", equipment: "啞鈴" },
+                    { name: "啞鈴提踵 (Calf Raise)", sets: 4, reps: "20-25", weight: "15-22.5kg", rest: "45s", img: "./img/04/04_啞鈴羅馬尼亞硬舉 (RDL).png", tip: "單手扶牆，單腳或雙腳墊腳尖，練出小腿菱形。", equipment: "啞鈴" }
                 ]
             },
-            Fri: {
-                title: "強制休息日 (Busy Day)",
-                focus: "工作/生活優先",
-                color: "bg-gray-700",
-                isRest: true,
-                tips: [
-                    "今天是忙碌日，專注於生活與工作。",
-                    "如果可以，盡量保持蛋白質攝取充足。",
-                    "為明天的「肩膀手臂大餐」儲備能量。"
-                ]
-            },
+            Fri: { title: "強制休息日 (Busy Day)", focus: "工作/生活優先", color: "bg-gray-700", isRest: true, tips: ["今天是忙碌日，專注於生活與工作。", "如果可以，盡量保持蛋白質攝取充足。", "為明天的「肩膀手臂大餐」儲備能量。"] },
             Sat: {
                 title: "肩膀與手臂 (Shoulders & Arms)",
                 focus: "視覺寬度、手臂圍度",
                 color: "bg-purple-600",
                 exercises: [
-                    {
-                        name: "坐姿啞鈴肩推 (Seated Press)",
-                        sets: "4",
-                        reps: "8-12",
-                        weight: "12.5-17.5kg",
-                        rest: "90s",
-                        img: "./img/06/01_坐姿啞鈴肩推 (Seated Press).png",
-                        tip: "核心動作：椅背 90 度，不要過度拱腰。",
-                        equipment: "啞鈴 + 椅子"
-                    },
-                    {
-                        name: "啞鈴側平舉 (Lateral Raise)",
-                        sets: "4",
-                        reps: "15-20",
-                        weight: "5-10kg",
-                        rest: "45s",
-                        img: "./img/06/02_啞鈴側平舉 (Lateral Raise).png",
-                        tip: "寬度關鍵：手肘微彎，像倒水一樣舉起。",
-                        equipment: "輕啞鈴"
-                    },
-                    {
-                        name: "啞鈴錘式彎舉 (Hammer Curl)",
-                        sets: "4",
-                        reps: "10-12",
-                        weight: "10-15kg",
-                        rest: "60s",
-                        img: "./img/06/03_啞鈴錘式彎舉 (Hammer Curl).png",
-                        tip: "Bear Mode 手臂靈魂：針對肱肌與前臂，讓手臂側面看起來非常厚實。",
-                        equipment: "啞鈴"
-                    },
-                    {
-                        name: "上斜啞鈴二頭彎舉 (Incline Curl)",
-                        sets: "3",
-                        reps: "10-12",
-                        weight: "7.5-12.5kg",
-                        rest: "60s",
-                        img: "./img/06/04_上斜啞鈴二頭彎舉 (Incline Curl).png",
-                        tip: "長頭延伸：躺在斜板上做彎舉，拉伸感極強。",
-                        equipment: "啞鈴 + 上斜椅"
-                    },
-                    {
-                        name: "啞鈴頸後臂屈伸 (Overhead Extension)",
-                        sets: "3",
-                        reps: "10-12",
-                        weight: "12.5-17.5kg",
-                        rest: "60s",
-                        img: "./img/06/05_啞鈴頸後臂屈伸 (Overhead Extension).png",
-                        tip: "三頭肌長頭：雙手合持一顆啞鈴，在頭後方上下。",
-                        equipment: "單顆啞鈴 + 椅子"
-                    }
+                    { name: "坐姿啞鈴肩推 (Seated Press)", sets: 4, reps: "8-12", weight: "12.5-17.5kg", rest: "90s", img: "./img/06/01_坐姿啞鈴肩推 (Seated Press).png", tip: "核心動作：椅背 90 度，不要過度拱腰。", equipment: "啞鈴 + 椅子" },
+                    { name: "啞鈴側平舉 (Lateral Raise)", sets: 4, reps: "15-20", weight: "5-10kg", rest: "45s", img: "./img/06/02_啞鈴側平舉 (Lateral Raise).png", tip: "寬度關鍵：手肘微彎，像倒水一樣舉起。", equipment: "輕啞鈴" },
+                    { name: "啞鈴錘式彎舉 (Hammer Curl)", sets: 4, reps: "10-12", weight: "10-15kg", rest: "60s", img: "./img/06/03_啞鈴錘式彎舉 (Hammer Curl).png", tip: "Bear Mode 手臂靈魂：針對肱肌與前臂，讓手臂側面看起來非常厚實。", equipment: "啞鈴" },
+                    { name: "上斜啞鈴二頭彎舉 (Incline Curl)", sets: 3, reps: "10-12", weight: "7.5-12.5kg", rest: "60s", img: "./img/06/04_上斜啞鈴二頭彎舉 (Incline Curl).png", tip: "長頭延伸：躺在斜板上做彎舉，拉伸感極強。", equipment: "啞鈴 + 上斜椅" },
+                    { name: "啞鈴頸後臂屈伸 (Overhead Ext)", sets: 3, reps: "10-12", weight: "12.5-17.5kg", rest: "60s", img: "./img/06/05_啞鈴頸後臂屈伸 (Overhead Extension).png", tip: "三頭肌長頭：雙手合持一顆啞鈴，在頭後方上下。", equipment: "單顆啞鈴 + 椅子" }
                 ]
             },
-            Sun: {
-                title: "強制休息日 (Busy Day)",
-                focus: "家庭/休息優先",
-                color: "bg-gray-800",
-                isRest: true,
-                tips: [
-                    "徹底放鬆，不要有罪惡感。",
-                    "Bear Mode 精神：吃好、睡好、練重。",
-                    "準備迎接週一的胸部訓練。"
-                ]
-            }
+            Sun: { title: "強制休息日 (Busy Day)", focus: "家庭/休息優先", color: "bg-gray-800", isRest: true, tips: ["徹底放鬆，不要有罪惡感。", "Bear Mode 精神：吃好、睡好、練重。", "準備迎接週一的胸部訓練。"] }
         };
 
         // --- Components ---
@@ -337,73 +212,87 @@
             </button>
         );
 
-        const ExerciseCard = ({ exercise, index, onImageClick }) => (
-            <div className="bg-gray-800 rounded-xl overflow-hidden shadow-lg mb-6 border border-gray-700">
-                <div 
-                    className="relative h-48 bg-gray-700 group cursor-pointer overflow-hidden" 
-                    onClick={() => onImageClick(exercise.img)}
-                    title="點擊放大圖片"
-                >
-                    <img 
-                        src={exercise.img} 
-                        alt={exercise.name} 
-                        className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500"
-                    />
-                    
-                    {/* Zoom Icon Overlay */}
-                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                         <div className="bg-black/50 p-3 rounded-full text-white backdrop-blur-sm transform scale-75 group-hover:scale-100 transition-transform duration-300">
-                             <ZoomIn className="w-8 h-8" />
-                         </div>
-                    </div>
-
-                    <div className="absolute top-2 left-2 bg-black/70 px-3 py-1 rounded text-xs font-bold text-orange-400 border border-orange-500/50">
-                        動作 {index + 1}
-                    </div>
-                    <div className="absolute bottom-0 w-full bg-gradient-to-t from-gray-900 to-transparent p-4 pt-12 pointer-events-none">
-                        <h3 className="text-xl font-bold text-white shadow-black drop-shadow-md">{exercise.name}</h3>
-                    </div>
-                </div>
-                
-                <div className="p-4 space-y-4">
-                <div className="grid grid-cols-4 gap-2 bg-gray-700/50 p-3 rounded-lg">
-                    <div className="text-center border-r border-gray-600">
-                        <div className="text-[10px] text-gray-400 uppercase tracking-wider">組數</div>
-                        <div className="text-lg font-bold text-white">{exercise.sets}</div>
-                    </div>
-                    <div className="text-center border-r border-gray-600">
-                        <div className="text-[10px] text-gray-400 uppercase tracking-wider">次數</div>
-                        <div className="text-lg font-bold text-white">{exercise.reps}</div>
-                    </div>
-                    <div className="text-center border-r border-gray-600">
-                        <div className="text-[10px] text-gray-400 uppercase tracking-wider flex justify-center items-center gap-1">
-                            <Scale className="w-3 h-3" /> 重量
+        const ExerciseCard = ({ exercise, index, completedCount, onAddSet, onImageClick }) => {
+            const isCompleted = completedCount >= exercise.sets;
+            
+            return (
+                <div className={`bg-gray-800 rounded-xl overflow-hidden shadow-lg mb-6 border transition-all duration-300 ${isCompleted ? 'border-green-500/50 opacity-90' : 'border-gray-700'}`}>
+                    <div 
+                        className="relative h-48 bg-gray-700 group cursor-pointer overflow-hidden" 
+                        onClick={() => onImageClick(exercise.img)}
+                    >
+                        <img 
+                            src={exercise.img} 
+                            alt={exercise.name} 
+                            className={`w-full h-full object-cover transition-all duration-500 ${isCompleted ? 'grayscale opacity-50' : 'opacity-80 group-hover:opacity-100 group-hover:scale-105'}`}
+                        />
+                        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <ZoomIn className="w-8 h-8 text-white" />
                         </div>
-                        <div className="text-lg font-bold text-yellow-400 leading-tight">{exercise.weight}</div>
+                        <div className="absolute top-2 left-2 bg-black/70 px-3 py-1 rounded text-xs font-bold text-orange-400 border border-orange-500/50">
+                            動作 {index + 1}
+                        </div>
+                        {isCompleted && (
+                             <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                                <div className="bg-green-500 text-white px-4 py-2 rounded-full font-bold flex items-center gap-2 shadow-lg">
+                                    <CheckCircle className="w-5 h-5" /> 已達標
+                                </div>
+                             </div>
+                        )}
+                        <div className="absolute bottom-0 w-full bg-gradient-to-t from-gray-900 to-transparent p-4 pt-12 pointer-events-none">
+                            <h3 className="text-xl font-bold text-white drop-shadow-md">{exercise.name}</h3>
+                        </div>
                     </div>
-                    <div className="text-center">
-                        <div className="text-[10px] text-gray-400 uppercase tracking-wider">休息</div>
-                        <div className="text-lg font-bold text-white">{exercise.rest}</div>
-                    </div>
-                </div>
+                    
+                    <div className="p-4 space-y-4">
+                        <div className="grid grid-cols-4 gap-2 bg-gray-700/50 p-3 rounded-lg">
+                            <div className="text-center border-r border-gray-600">
+                                <div className="text-[10px] text-gray-400 uppercase tracking-wider">目標組數</div>
+                                <div className="text-lg font-bold text-white">{exercise.sets}</div>
+                            </div>
+                            <div className="text-center border-r border-gray-600">
+                                <div className="text-[10px] text-gray-400 uppercase tracking-wider">次數</div>
+                                <div className="text-lg font-bold text-white">{exercise.reps}</div>
+                            </div>
+                            <div className="text-center border-r border-gray-600">
+                                <div className="text-[10px] text-gray-400 uppercase tracking-wider flex justify-center items-center gap-1">
+                                    <Scale className="w-3 h-3" /> 重量
+                                </div>
+                                <div className="text-lg font-bold text-yellow-400 leading-tight">{exercise.weight}</div>
+                            </div>
+                            <div className="text-center">
+                                <div className="text-[10px] text-gray-400 uppercase tracking-wider">休息</div>
+                                <div className="text-lg font-bold text-white">{exercise.rest}</div>
+                            </div>
+                        </div>
 
-                <div className="bg-orange-900/20 border-l-4 border-orange-500 p-3 rounded-r">
-                    <div className="flex items-start gap-2">
-                    <Zap className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-gray-200">
-                        <span className="font-bold text-orange-400">關鍵技巧：</span>
-                        {exercise.tip}
-                    </p>
+                        {/* Set Tracker Button */}
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); onAddSet(); }}
+                            className={`w-full py-3 rounded-lg font-bold flex items-center justify-center gap-3 transition-all ${
+                                isCompleted 
+                                ? 'bg-green-600/20 text-green-400 border border-green-600/50' 
+                                : 'bg-orange-600 hover:bg-orange-500 text-white shadow-lg'
+                            }`}
+                        >
+                            {isCompleted ? <CheckCircle className="w-5 h-5" /> : <Zap className="w-5 h-5" />}
+                            {isCompleted ? `全部完成 (${completedCount}/${exercise.sets})` : `完成一組 (${completedCount} / ${exercise.sets})`}
+                        </button>
+
+                        <div className="bg-orange-900/20 border-l-4 border-orange-500 p-3 rounded-r">
+                            <p className="text-sm text-gray-200">
+                                <span className="font-bold text-orange-400">技巧：</span>{exercise.tip}
+                            </p>
+                        </div>
+                        
+                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                            <Dumbbell className="w-4 h-4" />
+                            <span>{exercise.equipment}</span>
+                        </div>
                     </div>
                 </div>
-                
-                <div className="flex items-center gap-2 text-xs text-gray-500">
-                    <Dumbbell className="w-4 h-4" />
-                    <span>{exercise.equipment}</span>
-                </div>
-                </div>
-            </div>
-        );
+            );
+        };
 
         const RestView = ({ data }) => (
             <div className="flex flex-col items-center justify-center py-12 px-4 text-center h-full">
@@ -412,44 +301,31 @@
                 </div>
                 <h2 className="text-3xl font-bold text-white mb-2">{data.title}</h2>
                 <p className="text-gray-400 mb-8 max-w-xs mx-auto">{data.focus}</p>
-                
                 <div className="bg-gray-800 p-6 rounded-xl border border-gray-700 w-full max-w-sm">
-                <h3 className="text-lg font-bold text-green-400 mb-4 flex items-center justify-center gap-2">
-                    <Info className="w-5 h-5" /> 恢復指南
-                </h3>
-                <ul className="text-left space-y-3">
-                    {data.tips.map((tip, idx) => (
-                    <li key={idx} className="flex items-start gap-3 text-gray-300 text-sm">
-                        <span className="w-1.5 h-1.5 bg-green-500 rounded-full mt-2 flex-shrink-0" />
-                        {tip}
-                    </li>
-                    ))}
-                </ul>
+                    <h3 className="text-lg font-bold text-green-400 mb-4 flex items-center justify-center gap-2">
+                        <Info className="w-5 h-5" /> 恢復指南
+                    </h3>
+                    <ul className="text-left space-y-3">
+                        {data.tips.map((tip, idx) => (
+                        <li key={idx} className="flex items-start gap-3 text-gray-300 text-sm">
+                            <span className="w-1.5 h-1.5 bg-green-500 rounded-full mt-2 flex-shrink-0" />
+                            {tip}
+                        </li>
+                        ))}
+                    </ul>
                 </div>
             </div>
         );
 
-        // --- Image Modal Component ---
         const ImageModal = ({ src, onClose }) => {
             if (!src) return null;
             return (
-                <div 
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 p-4 backdrop-blur-sm transition-all duration-300"
-                    onClick={onClose}
-                >
-                    <div className="relative w-full max-w-3xl animate-[fadeIn_0.2s_ease-out]">
-                        <button 
-                            onClick={onClose}
-                            className="absolute -top-12 right-0 text-white hover:text-orange-500 p-2 transition-colors bg-white/10 hover:bg-white/20 rounded-full"
-                        >
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 p-4 backdrop-blur-sm" onClick={onClose}>
+                    <div className="relative w-full max-w-3xl">
+                        <button onClick={onClose} className="absolute -top-12 right-0 text-white p-2 bg-white/10 rounded-full hover:bg-white/20">
                             <XIcon className="w-6 h-6" />
                         </button>
-                        <img 
-                            src={src} 
-                            alt="Full view" 
-                            className="w-full h-auto max-h-[85vh] object-contain rounded-lg shadow-2xl border border-gray-700"
-                            onClick={(e) => e.stopPropagation()} 
-                        />
+                        <img src={src} className="w-full h-auto max-h-[85vh] object-contain rounded-lg shadow-2xl border border-gray-700" onClick={(e) => e.stopPropagation()} />
                     </div>
                 </div>
             );
@@ -458,89 +334,149 @@
         const App = () => {
             const [selectedDay, setSelectedDay] = useState('Mon');
             const [modalImage, setModalImage] = useState(null);
+            const [isEInk, setIsEInk] = useState(false);
+            
+            // Track completed sets per day and per exercise
+            const [progressState, setProgressState] = useState({});
+
             const currentData = scheduleData[selectedDay];
 
+            // Calculate progress for current day
+            const stats = useMemo(() => {
+                if (currentData.isRest) return { total: 0, current: 0, percent: 0 };
+                const totalSets = currentData.exercises.reduce((acc, ex) => acc + ex.sets, 0);
+                const currentDayProgress = progressState[selectedDay] || {};
+                const currentSets = Object.values(currentDayProgress).reduce((acc, count) => acc + count, 0);
+                return {
+                    total: totalSets,
+                    current: currentSets,
+                    percent: totalSets > 0 ? (currentSets / totalSets) * 100 : 0
+                };
+            }, [selectedDay, progressState, currentData]);
+
+            const handleAddSet = (exerciseName) => {
+                setProgressState(prev => {
+                    const dayState = prev[selectedDay] || {};
+                    const currentCount = dayState[exerciseName] || 0;
+                    const maxSets = currentData.exercises.find(e => e.name === exerciseName)?.sets || 99;
+                    
+                    if (currentCount >= maxSets) {
+                        return { ...prev, [selectedDay]: { ...dayState, [exerciseName]: 0 } };
+                    }
+
+                    return {
+                        ...prev,
+                        [selectedDay]: {
+                            ...dayState,
+                            [exerciseName]: currentCount + 1
+                        }
+                    };
+                });
+            };
+
             return (
-                <div className="min-h-screen bg-gray-900 text-gray-100 font-sans pb-10">
-                {/* Header */}
-                <div className="bg-gray-800 border-b border-gray-700 sticky top-0 z-20 shadow-xl">
-                    <div className="max-w-md mx-auto px-4 py-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="bg-orange-600 p-2 rounded-lg">
-                        <Dumbbell className="w-6 h-6 text-white" />
-                        </div>
-                        <div>
-                        <h1 className="text-xl font-bold text-white leading-none">Bear Mode</h1>
-                        <p className="text-xs text-gray-400 mt-1">居家啞鈴特訓</p>
-                        </div>
-                    </div>
-                    <div className="text-right">
-                        <div className="text-xs font-mono text-orange-500 border border-orange-500/30 px-2 py-1 rounded bg-orange-500/10">
-                        2.5kg - 22.5kg
-                        </div>
-                    </div>
-                    </div>
+                <div className={`min-h-screen transition-colors duration-300 ${isEInk ? 'e-ink-mode' : 'bg-gray-900 text-gray-100'}`}>
                     
-                    {/* Day Tabs */}
-                    <div className="flex overflow-x-auto max-w-md mx-auto scrollbar-hide">
-                    {Object.keys(scheduleData).map((day) => (
-                        <DayTab 
-                        key={day} 
-                        day={day} 
-                        isSelected={selectedDay === day} 
-                        onClick={() => setSelectedDay(day)} 
-                        />
-                    ))}
+                    {/* Fixed Progress Bar */}
+                    <div className="sticky top-0 z-30 w-full h-1.5 bg-gray-800 overflow-hidden">
+                        <div 
+                            className="h-full bg-blue-500 transition-all duration-500 ease-out progress-bar-fill"
+                            style={{ width: `${stats.percent}%` }}
+                        ></div>
                     </div>
-                </div>
 
-                {/* Modal Overlay */}
-                {modalImage && (
-                    <ImageModal src={modalImage} onClose={() => setModalImage(null)} />
-                )}
+                    {/* Header */}
+                    <div className={`bg-gray-800 border-b border-gray-700 z-20 shadow-xl`}>
+                        <div className="max-w-md mx-auto px-4 py-4 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="bg-orange-600 p-2 rounded-lg">
+                                    <Dumbbell className="w-6 h-6 text-white" />
+                                </div>
+                                <div>
+                                    <h1 className="text-xl font-bold text-white leading-none">Bear Mode</h1>
+                                    <p className="text-xs text-gray-400 mt-1">訓練進度: {Math.round(stats.percent)}%</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <button 
+                                    onClick={() => setIsEInk(!isEInk)}
+                                    className={`px-3 py-1 rounded-full text-xs font-bold transition-all border ${
+                                        isEInk 
+                                        ? 'bg-black text-white border-black' 
+                                        : 'bg-gray-700 text-gray-300 border-gray-600 hover:bg-gray-600'
+                                    }`}
+                                >
+                                    {isEInk ? '一般模式' : 'e-ink 模式'}
+                                </button>
+                            </div>
+                        </div>
+                        
+                        {/* Day Tabs */}
+                        <div className="flex overflow-x-auto max-w-md mx-auto scrollbar-hide">
+                            {Object.keys(scheduleData).map((day) => (
+                                <DayTab 
+                                    key={day} 
+                                    day={day} 
+                                    isSelected={selectedDay === day} 
+                                    onClick={() => setSelectedDay(day)} 
+                                />
+                            ))}
+                        </div>
+                    </div>
 
-                {/* Main Content */}
-                <div className="max-w-md mx-auto px-4 py-6">
-                    
-                    {/* Day Header Info */}
-                    <div className={`rounded-2xl p-6 mb-8 text-white shadow-lg ${currentData.color} bg-opacity-90 backdrop-blur-sm transition-colors duration-500`}>
-                    <div className="flex items-start justify-between mb-2">
-                        <h2 className="text-2xl font-bold">{currentData.title}</h2>
-                        {currentData.exercises && (
-                        <span className="bg-black/20 px-2 py-1 rounded text-xs font-mono">
-                            {currentData.exercises.length} 動作
-                        </span>
+                    {/* Modal */}
+                    {modalImage && <ImageModal src={modalImage} onClose={() => setModalImage(null)} />}
+
+                    {/* Main Content */}
+                    <div className="max-w-md mx-auto px-4 py-6 pb-24">
+                        
+                        {/* Day Header Info */}
+                        <div className={`rounded-2xl p-6 mb-8 text-white shadow-lg ${currentData.color} bg-opacity-90 backdrop-blur-sm transition-colors duration-500`}>
+                            <div className="flex items-start justify-between mb-2">
+                                <h2 className="text-2xl font-bold">{currentData.title}</h2>
+                                {currentData.exercises && (
+                                    <span className="bg-black/20 px-2 py-1 rounded text-xs font-mono">
+                                        {stats.current} / {stats.total} 組
+                                    </span>
+                                )}
+                            </div>
+                            <p className="text-white/80 text-sm flex items-center gap-2">
+                                <Flame className="w-4 h-4" /> 重點：{currentData.focus}
+                            </p>
+                        </div>
+
+                        {/* Content Area */}
+                        {currentData.isRest ? (
+                            <RestView data={currentData} />
+                        ) : (
+                            <div className="space-y-4">
+                                {currentData.exercises.map((exercise, index) => (
+                                    <ExerciseCard 
+                                        key={index} 
+                                        exercise={exercise} 
+                                        index={index}
+                                        completedCount={(progressState[selectedDay] || {})[exercise.name] || 0}
+                                        onAddSet={() => handleAddSet(exercise.name)}
+                                        onImageClick={setModalImage}
+                                    />
+                                ))}
+                                
+                                <div className="mt-8 text-center">
+                                    <p className="text-gray-500 text-sm mb-4">全部完成後別忘了伸展</p>
+                                    <button 
+                                        onClick={() => {
+                                            const newState = { ...progressState[selectedDay] };
+                                            currentData.exercises.forEach(ex => newState[ex.name] = ex.sets);
+                                            setProgressState(prev => ({ ...prev, [selectedDay]: newState }));
+                                        }}
+                                        className="w-full py-4 bg-gray-800 hover:bg-gray-700 text-green-500 font-bold rounded-xl border border-gray-700 transition-colors flex items-center justify-center gap-2"
+                                    >
+                                        <Calendar className="w-5 h-5" /> 標記今日為已完成
+                                    </button>
+                                </div>
+                            </div>
                         )}
                     </div>
-                    <p className="text-white/80 text-sm flex items-center gap-2">
-                        <Flame className="w-4 h-4" /> 
-                        重點：{currentData.focus}
-                    </p>
-                    </div>
-
-                    {/* Content Area */}
-                    {currentData.isRest ? (
-                    <RestView data={currentData} />
-                    ) : (
-                    <div className="space-y-4">
-                        {currentData.exercises.map((exercise, index) => (
-                        <ExerciseCard 
-                            key={index} 
-                            exercise={exercise} 
-                            index={index} 
-                            onImageClick={setModalImage}
-                        />
-                        ))}
-                        
-                        <div className="mt-8 text-center">
-                        <p className="text-gray-500 text-sm mb-4">訓練完成後別忘了伸展</p>
-                        <button className="w-full py-4 bg-gray-800 hover:bg-gray-700 text-green-500 font-bold rounded-xl border border-gray-700 transition-colors flex items-center justify-center gap-2">
-                            <Calendar className="w-5 h-5" /> 標記為已完成
-                        </button>
-                        </div>
-                    </div>
-                    )}
-                </div>
                 </div>
             );
         };
