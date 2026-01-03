@@ -3,121 +3,211 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>壯熊手臂增肌訓練計畫 - E-ink 版</title>
+    <title>壯熊手臂增肌計畫 - 大字體版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* 針對電子墨水屏優化的樣式 */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+        
+        :root {
+            --bg-color: #0f172a;
+            --text-color: #f1f5f9;
+            --accent-color: #fb923c;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --border-style: 1px solid rgba(255, 255, 255, 0.1);
+            --radius: 1.5rem;
+        }
+
+        /* --- 基礎樣式 (大字體) --- */
         body {
-            font-family: system-ui, -apple-system, sans-serif;
-            background-color: #ffffff;
-            color: #000000;
-            line-height: 1.4;
+            font-family: 'Inter', system-ui, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        /* 移除所有漸層、模糊與陰影 */
-        .card {
-            background: #ffffff;
-            border: 3px solid #000000;
-            margin-bottom: 1.5rem;
+        /* 標題與文字統一放大 */
+        h1 { font-size: 3.5rem !important; line-height: 1 !important; } /* 巨大標題 */
+        h2 { font-size: 2rem !important; } /* Phase 標題 */
+        h3 { font-size: 2.75rem !important; line-height: 1.1 !important; } /* 動作名稱 */
+        
+        .stat-badge { font-size: 1.5rem !important; padding: 0.5rem 1rem !important; }
+        .exercise-tip { font-size: 1.25rem !important; line-height: 1.6 !important; }
+        
+        /* 組數按鈕放大 */
+        .set-label {
+            width: 5.5rem !important;
+            height: 5.5rem !important;
+            font-size: 1.75rem !important;
+            font-weight: 900 !important;
         }
 
-        /* 勾選後的狀態：純黑背景反白字 */
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border: var(--border-style);
+            border-radius: var(--radius);
+        }
+
         .set-checkbox:checked + label {
+            background-color: var(--accent-color);
+            border-color: var(--accent-color);
+            color: #0f172a;
+            transform: scale(1.05);
+        }
+
+        .progress-fill {
+            background-color: var(--accent-color);
+            box-shadow: 0 0 15px rgba(251, 146, 60, 0.6);
+            transition: width 0.3s ease;
+        }
+
+        /* --- E-ink 模式特定覆蓋 --- */
+        body.e-ink-mode {
+            background-color: #ffffff !important;
+            color: #000000 !important;
+        }
+
+        body.e-ink-mode * {
+            transition: none !important;
+            animation: none !important;
+            box-shadow: none !important;
+            backdrop-filter: none !important;
+            text-shadow: none !important;
+        }
+
+        body.e-ink-mode .glass-card {
+            background: #ffffff !important;
+            border: 4px solid #000000 !important;
+            border-radius: 0 !important;
+            color: #000000 !important;
+        }
+
+        body.e-ink-mode .set-checkbox:checked + label {
             background-color: #000000 !important;
             color: #ffffff !important;
             border-color: #000000 !important;
         }
 
-        /* 進度條改為純黑實色 */
-        .progress-bar {
-            background-color: #000000;
+        body.e-ink-mode .set-label {
+            border: 4px solid #000000 !important;
+            border-radius: 0 !important;
         }
 
-        /* 針對 E-ink 停用所有動畫 */
-        * {
-            transition: none !important;
-            animation: none !important;
+        body.e-ink-mode .progress-fill {
+            background-color: #000000 !important;
         }
 
-        .no-scrollbar::-webkit-scrollbar {
-            display: none;
+        body.e-ink-mode .progress-container {
+            border: 4px solid #000000 !important;
+            background-color: #ffffff !important;
+            height: 2.5rem !important;
         }
+
+        body.e-ink-mode .text-slate-400, 
+        body.e-ink-mode .text-slate-500 {
+            color: #000000 !important;
+            opacity: 1;
+        }
+
+        body.e-ink-mode .exercise-tip { 
+            border-left: 10px solid #000 !important; 
+            background: #f0f0f0 !important; 
+            border-radius: 0 !important;
+        }
+
+        body.e-ink-mode .stat-badge { 
+            border: 3px solid #000 !important; 
+            background: #fff !important; 
+            color: #000 !important;
+            border-radius: 0 !important;
+        }
+
+        /* Utilities */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
     </style>
 </head>
-<body class="pb-40">
+<body class="pb-32">
 
-    <!-- Header Section -->
-    <div class="sticky top-0 z-40 bg-white border-b-4 border-black p-6">
-        <div class="flex justify-between items-center mb-4">
+    <!-- Fixed Header -->
+    <div id="sticky-header" class="sticky top-0 z-40 bg-[#0f172a]/95 backdrop-blur-xl border-b border-white/10 p-6">
+        <div class="flex justify-between items-start mb-6">
             <div>
-                <h1 class="text-4xl font-black">壯熊手臂計畫</h1>
-                <p class="text-lg font-bold tracking-widest">BEAR MODE ARMS</p>
+                <h1 class="font-black tracking-tighter">壯熊手臂計畫</h1>
+                <p class="text-slate-400 text-lg uppercase tracking-[0.2em] font-bold">Bear Mode Arms</p>
             </div>
-            <button onclick="toggleRules()" class="p-4 border-4 border-black font-black text-2xl">
-                法則
-            </button>
-        </div>
-
-        <!-- Progress Bar -->
-        <div class="mt-4">
-            <div class="flex justify-between items-end mb-2">
-                <span class="text-xl font-bold">目前進度</span>
-                <span id="progress-text" class="text-3xl font-black">0%</span>
-            </div>
-            <div class="w-full border-4 border-black h-8 bg-white overflow-hidden">
-                <div id="progress-bar" class="progress-bar h-full w-0"></div>
+            <div class="flex gap-3">
+                <button onclick="toggleDisplayMode()" class="p-4 glass-card flex flex-col items-center justify-center min-w-[80px]">
+                    <span id="mode-icon" class="text-3xl">🕶️</span>
+                    <span id="mode-text" class="text-xs font-bold mt-2 uppercase">Fancy</span>
+                </button>
+                <button onclick="toggleRules()" class="p-4 glass-card">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </button>
             </div>
         </div>
-    </div>
 
-    <!-- Quick Info -->
-    <div class="px-6 mt-8 grid grid-cols-1 gap-4">
-        <div class="card p-6 rounded-none">
-            <p class="text-lg font-bold border-b-2 border-black mb-2 inline-block">訓練目標</p>
-            <p class="text-2xl font-black">正面寬度 & 側面厚度</p>
+        <!-- Progress Section -->
+        <div>
+            <div class="flex justify-between items-end mb-3">
+                <span class="text-xl font-black text-slate-500 uppercase tracking-widest">Progress</span>
+                <span id="progress-text" class="text-4xl font-mono font-black">0%</span>
+            </div>
+            <div class="progress-container w-full bg-slate-800/80 h-4 rounded-full overflow-hidden border border-white/5">
+                <div id="progress-bar" class="progress-fill h-full w-0"></div>
+            </div>
         </div>
     </div>
 
     <!-- Workout List -->
-    <main id="workout-container" class="px-6 mt-8">
+    <main id="workout-container" class="px-6 mt-10 space-y-12">
         <!-- JS 動態生成 -->
     </main>
 
     <!-- Timer Bar -->
-    <div id="timer-bar" class="fixed bottom-0 left-0 w-full bg-white border-t-4 border-black p-6 hidden z-50">
+    <div id="timer-bar" class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[94%] max-w-xl glass-card p-6 shadow-2xl hidden z-50 border-2 border-orange-500/30">
         <div class="flex items-center justify-between">
             <div class="flex items-center gap-6">
-                <div id="timer-display" class="text-6xl font-black">00:00</div>
-                <div class="text-xl font-bold">組間休息...</div>
+                <div id="timer-display" class="text-6xl font-mono font-black text-orange-400">00:00</div>
+                <div class="flex flex-col">
+                    <span class="text-lg font-black uppercase text-slate-500">Resting</span>
+                    <span class="text-sm font-bold opacity-80">組間休息...</span>
+                </div>
             </div>
-            <div class="flex gap-4">
-                <button onclick="addTime(15)" class="px-6 py-4 border-4 border-black font-black text-xl">+15s</button>
-                <button onclick="resetTimer()" class="px-8 py-4 bg-black text-white font-black text-xl">跳過</button>
+            <div class="flex gap-3">
+                <button onclick="addTime(15)" class="px-6 py-4 bg-slate-700/60 rounded-xl text-xl font-black">+15s</button>
+                <button onclick="resetTimer()" class="px-8 py-4 bg-orange-500 text-slate-900 rounded-xl text-xl font-black uppercase">Skip</button>
             </div>
         </div>
     </div>
 
     <!-- Rules Modal -->
-    <div id="rules-modal" class="fixed inset-0 bg-white z-[100] hidden flex-col p-8 overflow-y-auto">
-        <div class="flex justify-between items-center mb-8 border-b-4 border-black pb-4">
-            <h2 class="text-4xl font-black">訓練黃金法則</h2>
-            <button onclick="toggleRules()" class="p-4 border-4 border-black text-2xl font-black">關閉</button>
+    <div id="rules-modal" class="fixed inset-0 bg-black/95 backdrop-blur-xl z-[100] hidden flex-col p-10 overflow-y-auto">
+        <div class="flex justify-between items-center mb-10 border-b border-white/10 pb-6">
+            <h2 class="text-5xl font-black text-white">訓練黃金法則</h2>
+            <button onclick="toggleRules()" class="p-4 text-slate-400">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
         </div>
-        <div class="space-y-10">
+        <div class="space-y-12">
             <div>
-                <h4 class="text-2xl font-black mb-4">01. 節奏控制</h4>
-                <p class="text-xl font-bold">慢下快上 (3-0-1-0)：放慢下放速度至 3~4 秒。這比單純加重更能有效刺激肌肉肥大。</p>
+                <h4 class="text-orange-400 text-2xl font-black uppercase mb-3">01. 節奏控制</h4>
+                <p class="text-slate-200 text-2xl leading-relaxed"><strong>3-0-1-0：</strong> 放慢下放速度至 3~4 秒。離心收縮是肌肉肥大最關鍵的刺激。</p>
             </div>
             <div>
-                <h4 class="text-2xl font-black mb-4">02. 支點穩定</h4>
-                <p class="text-xl font-bold">鎖定手肘：手肘應為支點固定，不要前後移動來借力。</p>
+                <h4 class="text-orange-400 text-2xl font-black uppercase mb-3">02. 支點穩定</h4>
+                <p class="text-slate-200 text-2xl leading-relaxed"><strong>鎖定手肘：</strong> 手肘必須固定，不要前後擺動藉力，專注於目標肌群。</p>
             </div>
             <div>
-                <h4 class="text-2xl font-black mb-4">03. 頂峰收縮</h4>
-                <p class="text-xl font-bold">強力擠壓：在動作最頂端停頓 1 秒，感受肌肉最極限的收縮感。</p>
+                <h4 class="text-orange-400 text-2xl font-black uppercase mb-3">03. 頂峰收縮</h4>
+                <p class="text-slate-200 text-2xl leading-relaxed"><strong>強力擠壓：</strong> 在動作頂端停頓 1 秒，想像要把肌肉纖維擠爆。</p>
             </div>
         </div>
-        <button onclick="toggleRules()" class="w-full mt-12 py-8 bg-black text-white font-black text-3xl">準備開練</button>
+        <button onclick="toggleRules()" class="w-full mt-16 py-8 bg-orange-500 text-slate-900 font-black text-3xl rounded-3xl">準備開練</button>
     </div>
 
     <script>
@@ -126,31 +216,31 @@
                 phase: "Phase 01: 暖身激活",
                 rest: 0,
                 exercises: [
-                    { name: "輕重量彎舉", weight: "約 5kg", sets: 2, reps: "20", angle: "站姿", tip: "讓關節產生滑液，預防受傷" },
-                    { name: "輕重量臂屈伸", weight: "約 5kg", sets: 2, reps: "20", angle: "站姿", tip: "肌肉充血，預熱三頭肌" }
+                    { name: "輕重量彎舉", weight: "5kg", sets: 2, reps: "20", angle: "站姿", tip: "預防受傷，讓關節產生滑液" },
+                    { name: "輕重量臂屈伸", weight: "5kg", sets: 2, reps: "20", angle: "站姿", tip: "預熱三頭肌，開始充血" }
                 ]
             },
             {
                 phase: "Phase 02: 厚度與寬度堆疊",
                 rest: 90,
                 exercises: [
-                    { name: "坐姿過頭臂屈伸", weight: "22.5kg", sets: 4, reps: "8-10", angle: "90° (坐姿)", tip: "手肘內收，拉開三頭肌長頭" },
-                    { name: "坐姿啞鈴錘式彎舉", weight: "22.5kg", sets: 4, reps: "8-10", angle: "90° (坐姿)", tip: "專攻「肱肌」，手臂正面寬度關鍵" }
+                    { name: "坐姿過頭臂屈伸", weight: "22.5kg", sets: 4, reps: "8-10", angle: "90° (坐姿)", tip: "拉開三頭肌長頭，增加厚度" },
+                    { name: "坐姿啞鈴錘式彎舉", weight: "22.5kg", sets: 4, reps: "8-10", angle: "90° (坐姿)", tip: "專攻肱肌，手臂正面寬度關鍵" }
                 ]
             },
             {
                 phase: "Phase 03: 線條與飽滿度雕塑",
                 rest: 60,
                 exercises: [
-                    { name: "仰臥啞鈴臂屈伸", weight: "10-15kg", sets: 3, reps: "10-12", angle: "0° (平躺)", tip: "離心慢下 3 秒，感受三頭肌撕裂感" },
-                    { name: "上斜啞鈴彎舉", weight: "10-15kg", sets: 3, reps: "12-15", angle: "45°-60°", tip: "手臂下垂身後，打造外側弧度" }
+                    { name: "仰臥啞鈴臂屈伸", weight: "10-15kg", sets: 3, reps: "10-12", angle: "0° (平躺)", tip: "慢下 3 秒，感受肌肉撕裂" },
+                    { name: "上斜啞鈴彎舉", weight: "10-15kg", sets: 3, reps: "12-15", angle: "45°-60°", tip: "打造二頭肌外側弧度" }
                 ]
             },
             {
                 phase: "Phase 04: 充血收尾",
                 rest: 45,
                 exercises: [
-                    { name: "啞鈴窄距臥推", weight: "組合重量", sets: 3, reps: "力竭", angle: "0° (平躺)", tip: "兩顆啞鈴緊貼，衝擊整體圍度" }
+                    { name: "啞鈴窄距臥推", weight: "組合重量", sets: 3, reps: "力竭", angle: "0° (平躺)", tip: "啞鈴緊貼，衝擊整體三頭圍度" }
                 ]
             }
         ];
@@ -159,12 +249,14 @@
         let completedSets = 0;
         let timerInterval = null;
         let timeLeft = 0;
+        let isEink = false;
 
         function init() {
             const container = document.getElementById('workout-container');
+            container.innerHTML = '';
+            totalSets = 0;
             workoutData.forEach((phase, phaseIdx) => {
                 const phaseEl = document.createElement('section');
-                phaseEl.className = "mb-12";
                 
                 let exercisesHtml = '';
                 phase.exercises.forEach((ex, exIdx) => {
@@ -176,7 +268,7 @@
                         setsHtml += `
                             <div class="flex-shrink-0">
                                 <input type="checkbox" id="${setId}" class="hidden set-checkbox" onchange="toggleSet('${setId}', ${phase.rest})">
-                                <label for="${setId}" class="w-20 h-20 border-4 border-black flex items-center justify-center text-xl font-black cursor-pointer">
+                                <label for="${setId}" class="set-label border-4 border-slate-700 rounded-3xl flex items-center justify-center transition-all cursor-pointer hover:border-slate-400">
                                     ${i}
                                 </label>
                             </div>
@@ -184,19 +276,19 @@
                     }
 
                     exercisesHtml += `
-                        <div class="card p-6">
-                            <div class="flex justify-between items-start mb-4">
-                                <h3 class="font-black text-3xl">${ex.name}</h3>
-                                <span class="border-2 border-black px-3 py-1 text-lg font-bold uppercase">${ex.angle}</span>
+                        <div class="glass-card p-8 mb-8">
+                            <div class="flex justify-between items-start mb-6">
+                                <h3 class="font-black">${ex.name}</h3>
+                                <span class="stat-badge border border-orange-500/20 rounded-xl font-black uppercase text-orange-400 whitespace-nowrap">${ex.angle}</span>
                             </div>
-                            <div class="flex flex-wrap gap-4 mb-4">
-                                <span class="text-2xl font-black bg-black text-white px-4 py-2">${ex.weight}</span>
-                                <span class="text-2xl font-black border-4 border-black px-4 py-2">${ex.reps} REPS</span>
+                            <div class="flex flex-wrap gap-4 mb-6">
+                                <span class="stat-badge bg-slate-800/60 rounded-2xl font-black text-white">${ex.weight}</span>
+                                <span class="stat-badge bg-slate-800/60 rounded-2xl font-black text-white">${ex.reps} REPS</span>
                             </div>
-                            <div class="bg-gray-100 p-4 mb-6 border-l-8 border-black">
-                                <p class="text-xl font-bold">${ex.tip}</p>
+                            <div class="exercise-tip bg-white/5 border-l-4 border-orange-500 p-6 mb-8 rounded-r-2xl">
+                                <p class="font-medium italic opacity-90">"${ex.tip}"</p>
                             </div>
-                            <div class="flex gap-4 overflow-x-auto no-scrollbar pb-2">
+                            <div class="flex gap-6 overflow-x-auto no-scrollbar py-2">
                                 ${setsHtml}
                             </div>
                         </div>
@@ -204,11 +296,34 @@
                 });
 
                 phaseEl.innerHTML = `
-                    <h2 class="text-2xl font-black bg-black text-white inline-block px-4 py-1 mb-4">${phase.phase}</h2>
+                    <div class="mb-6 flex items-center gap-4">
+                        <span class="h-1.5 w-10 bg-orange-500 rounded-full"></span>
+                        <h2 class="font-black text-slate-400 uppercase tracking-widest">${phase.phase}</h2>
+                    </div>
                     ${exercisesHtml}
                 `;
                 container.appendChild(phaseEl);
             });
+        }
+
+        function toggleDisplayMode() {
+            isEink = !isEink;
+            const body = document.body;
+            const header = document.getElementById('sticky-header');
+            const icon = document.getElementById('mode-icon');
+            const text = document.getElementById('mode-text');
+
+            if (isEink) {
+                body.classList.add('e-ink-mode');
+                header.style.backgroundColor = "white";
+                icon.innerText = '📄';
+                text.innerText = 'E-Ink';
+            } else {
+                body.classList.remove('e-ink-mode');
+                header.style.backgroundColor = ""; // 回復 CSS 定義
+                icon.innerText = '🕶️';
+                text.innerText = 'Fancy';
+            }
         }
 
         function toggleSet(id, restTime) {
@@ -223,7 +338,7 @@
         }
 
         function updateProgress() {
-            const percent = Math.round((completedSets / totalSets) * 100);
+            const percent = Math.round((completedSets / (totalSets || 1)) * 100);
             document.getElementById('progress-bar').style.width = `${percent}%`;
             document.getElementById('progress-text').innerText = `${percent}%`;
         }
@@ -232,14 +347,13 @@
             clearInterval(timerInterval);
             timeLeft = seconds;
             document.getElementById('timer-bar').classList.remove('hidden');
-            
             updateTimerDisplay();
-            
             timerInterval = setInterval(() => {
                 timeLeft--;
                 updateTimerDisplay();
                 if (timeLeft <= 0) {
                     resetTimer();
+                    if (navigator.vibrate) navigator.vibrate([300, 100, 300]);
                 }
             }, 1000);
         }
@@ -262,8 +376,15 @@
 
         function toggleRules() {
             const modal = document.getElementById('rules-modal');
-            modal.classList.toggle('hidden');
-            modal.classList.toggle('flex');
+            if (modal.classList.contains('hidden')) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                if (isEink) modal.style.backgroundColor = "white";
+                else modal.style.backgroundColor = "";
+            } else {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
         }
 
         window.onload = init;
