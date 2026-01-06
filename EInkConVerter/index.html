@@ -3,522 +3,369 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>7-Color E-Ink Converter</title>
-    <!-- Tailwind CSS -->
+    <title>ACeP 7-Color Hardware Optimizer</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        /* Custom styles for range inputs */
         input[type=range] {
-            -webkit-appearance: none; /* Hides the slider so that custom slider can be made */
-            width: 100%; /* Specific width is required for Firefox. */
-            background: transparent; /* Otherwise white in Chrome */
-            height: 24px; /* Ensure enough touch area */
-            padding: 0;
-            margin: 0;
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+            height: 24px;
         }
-
         input[type=range]::-webkit-slider-thumb {
             -webkit-appearance: none;
-            height: 24px;
-            width: 24px;
-            border-radius: 50%;
-            background: #4f46e5; /* indigo-600 */
-            cursor: pointer;
-            margin-top: -8px; /* Center thumb on track: (24px - 8px) / -2 */
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-            border: 2px solid white;
-        }
-
-        input[type=range]::-webkit-slider-runnable-track {
-            width: 100%;
-            height: 8px;
-            cursor: pointer;
-            background: #e2e8f0; /* slate-200 */
-            border-radius: 9999px;
-        }
-
-        input[type=range]:focus {
-            outline: none;
-        }
-        
-        /* Firefox Styles */
-        input[type=range]::-moz-range-thumb {
-            height: 24px;
-            width: 24px;
-            border: 2px solid white;
+            height: 20px;
+            width: 20px;
             border-radius: 50%;
             background: #4f46e5;
             cursor: pointer;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            margin-top: -6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border: 2px solid white;
         }
-        
-        input[type=range]::-moz-range-track {
+        input[type=range]::-webkit-slider-runnable-track {
             width: 100%;
             height: 8px;
-            cursor: pointer;
             background: #e2e8f0;
             border-radius: 9999px;
         }
-
-        /* Hide scrollbar for cleaner UI on mobile */
-        .no-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
-        .no-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-900 font-sans selection:bg-indigo-100 pb-20">
+<body class="bg-slate-50 text-slate-900 font-sans pb-20">
 
-    <!-- Header -->
-    <header class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
         <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
             <div class="flex items-center gap-3">
-                <div class="bg-indigo-600 p-2 rounded-lg text-white">
-                    <i data-lucide="zap" width="20" height="20"></i>
+                <div class="bg-emerald-600 p-2 rounded-lg text-white">
+                    <i data-lucide="monitor-smartphone" width="20" height="20"></i>
                 </div>
-                <h1 class="text-lg sm:text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-violet-600 truncate">
-                    7-Color E-Ink Converter
-                </h1>
+                <div>
+                    <h1 class="text-lg font-bold text-slate-800">ACeP 硬體校準優化器</h1>
+                    <p class="text-[10px] text-emerald-600 font-bold uppercase tracking-widest">Physical Color Compensation Active</p>
+                </div>
             </div>
-            <div class="text-xs sm:text-sm text-slate-500 hidden sm:block">
-                專為 ACEP 7色電子紙設計 (Hardware Mode)
+            <div id="status-tag" class="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-1 rounded-md font-bold">
+                已補償 G:#005000 / B:#000050
             </div>
         </div>
     </header>
 
-    <main class="max-w-6xl mx-auto px-4 py-6 sm:py-8">
-        
-        <!-- Palette Display -->
-        <div class="mb-6 sm:mb-8 bg-white p-4 rounded-xl border border-slate-200 shadow-sm overflow-x-auto no-scrollbar">
-            <h2 class="text-xs sm:text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2 whitespace-nowrap">
-                <i data-lucide="info" width="16" height="16"></i> 輸出色彩映射 (Output Mapping)
-            </h2>
-            <div class="flex sm:grid sm:grid-cols-4 md:grid-cols-7 gap-3 min-w-max sm:min-w-0" id="palette-container">
-                <!-- Palette items will be injected here by JS -->
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
+    <main class="max-w-6xl mx-auto px-4 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
           
-            <!-- Left: Controls & Upload -->
+            <!-- Left: Settings -->
             <div class="lg:col-span-4 space-y-6">
-                
-                <!-- Upload Zone -->
-                <div class="bg-white p-6 rounded-2xl border-2 border-dashed border-slate-300 hover:border-indigo-400 transition-colors text-center group cursor-pointer relative overflow-hidden active:bg-slate-50">
+                <!-- Upload -->
+                <div class="bg-white p-6 rounded-2xl border-2 border-dashed border-slate-200 hover:border-emerald-400 transition-all text-center group cursor-pointer relative">
                     <input type="file" id="fileInput" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20">
-                    <div class="flex flex-col items-center justify-center py-4 sm:py-8">
-                        <div class="bg-indigo-50 text-indigo-600 p-4 rounded-full mb-4 group-hover:scale-110 transition-transform">
-                            <i data-lucide="upload" width="32" height="32"></i>
-                        </div>
-                        <p class="text-lg font-semibold text-slate-700">上傳圖片</p>
-                        <p class="text-slate-400 text-sm mt-1">支援 JPG, PNG, WebP</p>
+                    <div class="py-2">
+                        <i data-lucide="upload-cloud" class="mx-auto mb-2 text-slate-400 group-hover:text-emerald-600 transition-colors" width="32" height="32"></i>
+                        <p class="text-sm font-bold text-slate-600">更換優化圖片</p>
                     </div>
                 </div>
 
                 <!-- Controls -->
-                <div class="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
-                    <div class="flex items-center gap-2 mb-4 border-b border-slate-100 pb-4">
-                        <i data-lucide="settings" width="20" height="20" class="text-slate-400"></i>
-                        <h3 class="font-bold text-slate-800">轉換設定</h3>
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-5">
+                    <h3 class="font-bold text-slate-800 flex items-center gap-2 text-sm border-b pb-3">
+                        <i data-lucide="cpu" width="16" height="16"></i> 硬體物理補償設定
+                    </h3>
+
+                    <!-- Signal Boost -->
+                    <div>
+                        <div class="flex justify-between mb-1">
+                            <label class="text-xs font-bold text-slate-600">綠/藍 訊號增益 (Boost)</label>
+                            <span id="boost-val" class="text-xs font-mono text-emerald-600">1.5x</span>
+                        </div>
+                        <input type="range" id="boost-input" min="100" max="300" value="150">
+                        <p class="text-[10px] text-slate-400 mt-1">補償 G/B 顏料亮度不足，防止轉換後出現過多白雜點。</p>
                     </div>
 
-                    <!-- Dithering Toggle -->
+                    <!-- Gamma -->
                     <div>
-                        <div class="flex justify-between items-center mb-2">
-                            <label class="text-sm font-medium text-slate-700">演算法</label>
-                            <span id="dithering-label" class="text-xs text-indigo-600 font-medium bg-indigo-50 px-2 py-1 rounded-full">
-                                Floyd-Steinberg 抖動
-                            </span>
+                        <div class="flex justify-between mb-1">
+                            <label class="text-xs font-bold text-slate-600">明度展開 (Gamma)</label>
+                            <span id="gamma-val" class="text-xs font-mono text-emerald-600">1.3</span>
                         </div>
-                        <button id="dithering-btn" class="w-full py-3 px-4 rounded-lg border text-sm font-medium transition-all bg-indigo-600 text-white border-indigo-600 hover:bg-indigo-700 active:scale-[0.98]">
-                            已開啟抖動 (適合照片)
-                        </button>
-                        <p class="text-xs text-slate-400 mt-2">
-                            抖動可以讓照片在有限色彩下顯示更多細節，但會產生雜點。
+                        <input type="range" id="gamma-input" min="50" max="250" value="130">
+                    </div>
+
+                    <!-- Saturation -->
+                    <div>
+                        <div class="flex justify-between mb-1">
+                            <label class="text-xs font-bold text-slate-600">色彩鮮豔度</label>
+                            <span id="vibe-val" class="text-xs font-mono text-emerald-600">+40%</span>
+                        </div>
+                        <input type="range" id="vibe-input" min="0" max="200" value="140">
+                    </div>
+
+                    <div class="pt-4 border-t border-slate-100 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <label class="text-xs font-bold text-slate-600 italic">開啟「物理真實」預覽</label>
+                            <button id="sim-btn" class="w-12 h-6 rounded-full bg-slate-200 relative transition-colors">
+                                <div id="sim-dot" class="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform"></div>
+                            </button>
+                        </div>
+                        <p class="text-[10px] text-rose-500 font-medium">
+                            * 開啟後，預覽圖會模擬 G:#005000 的暗度，這是面板真實表現。
                         </p>
                     </div>
 
-                    <!-- Width -->
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-2">
-                            輸出寬度 (px)
-                        </label>
-                        <input type="number" id="width-input" value="800" class="w-full px-3 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-lg">
-                    </div>
-
-                    <!-- Brightness -->
-                    <div>
-                        <div class="flex justify-between mb-2">
-                            <label class="text-sm font-medium text-slate-700">亮度</label>
-                            <span id="brightness-val" class="text-xs text-slate-500">0%</span>
-                        </div>
-                        <input type="range" id="brightness-input" min="-100" max="100" value="0" class="w-full appearance-none bg-transparent cursor-pointer">
-                    </div>
-
-                    <!-- Contrast -->
-                    <div>
-                        <div class="flex justify-between mb-2">
-                            <label class="text-sm font-medium text-slate-700">對比度</label>
-                            <span id="contrast-val" class="text-xs text-slate-500">0%</span>
-                        </div>
-                        <input type="range" id="contrast-input" min="-100" max="100" value="0" class="w-full appearance-none bg-transparent cursor-pointer">
-                    </div>
-
-                    <button id="reset-btn" class="flex items-center justify-center gap-2 w-full text-sm text-slate-500 hover:text-slate-800 py-3 active:bg-slate-50 rounded-lg">
-                        <i data-lucide="refresh-cw" width="14" height="14"></i> 重置設定
-                    </button>
+                    <button id="reset-btn" class="w-full text-xs text-slate-400 hover:text-emerald-600 py-2">還原預設值</button>
                 </div>
             </div>
 
-            <!-- Right: Preview Area -->
+            <!-- Right: Result -->
             <div class="lg:col-span-8 space-y-6">
-                
-                <!-- Processed View -->
-                <div class="bg-white p-2 rounded-2xl border border-slate-200 shadow-sm">
-                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 py-3 border-b border-slate-100 mb-2 gap-3">
-                        <div class="flex items-center gap-2">
-                            <i data-lucide="image" width="20" height="20" class="text-indigo-600"></i>
-                            <h3 class="font-bold text-slate-800">預覽結果 (硬體訊號色)</h3>
-                        </div>
-                        <button id="download-btn" class="hidden flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg text-sm font-medium transition-colors w-full sm:w-auto justify-center shadow-md active:bg-indigo-800">
-                            <i data-lucide="download" width="16" height="16"></i> 下載圖片
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                        <h3 class="font-bold text-slate-800 flex items-center gap-2">
+                            <i data-lucide="image" width="18" height="18"></i> 補償後預覽
+                        </h3>
+                        <button id="download-btn" class="hidden bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition-all">
+                            <i data-lucide="download-zero" width="14" height="14"></i> 下載高增益圖片
                         </button>
                     </div>
-
-                    <div class="relative bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-slate-100 min-h-[300px] sm:min-h-[400px] flex items-center justify-center rounded-xl overflow-hidden border border-slate-100">
-                        
-                        <!-- Loading Overlay -->
-                        <div id="loading-overlay" class="hidden absolute inset-0 bg-white/80 z-20 flex flex-col items-center justify-center backdrop-blur-sm">
-                            <i data-lucide="refresh-cw" width="32" height="32" class="animate-spin text-indigo-600 mb-2"></i>
-                            <span class="text-sm font-medium text-indigo-600">正在轉換色彩...</span>
-                        </div>
-
-                        <!-- Empty State -->
-                        <div id="empty-state" class="text-center text-slate-400 p-10">
-                            <i data-lucide="image" width="48" height="48" class="mx-auto mb-3 opacity-50"></i>
-                            <p>請先上傳圖片以開始轉換</p>
-                        </div>
-
-                        <!-- Image Result -->
-                        <img id="processed-img" class="hidden max-w-full h-auto shadow-lg" style="image-rendering: pixelated;" alt="Processed">
-                    </div>
                     
-                    <!-- Original Image thumbnail -->
-                    <div id="original-preview-container" class="hidden mt-4 px-4 pb-2">
-                        <p class="text-xs font-semibold text-slate-500 mb-2">原始圖片參考：</p>
-                        <div class="h-20 w-20 rounded-lg overflow-hidden border border-slate-200 relative group">
-                            <img id="original-img" class="w-full h-full object-cover" alt="Original">
+                    <div class="relative min-h-[450px] bg-slate-100 flex items-center justify-center p-4">
+                        <div id="loading" class="hidden absolute inset-0 bg-white/80 backdrop-blur-sm z-30 flex items-center justify-center">
+                            <div class="animate-spin text-emerald-600"><i data-lucide="refresh-cw"></i></div>
                         </div>
+                        <div id="empty-state" class="text-slate-300 text-center">
+                            <i data-lucide="monitor-dot" width="64" height="64" class="mx-auto mb-4 opacity-20"></i>
+                            <p class="text-sm">請選擇一張圖片進行物理補償</p>
+                        </div>
+                        <img id="main-img" class="hidden max-w-full max-h-[70vh] shadow-xl rounded-sm">
                     </div>
                 </div>
 
-                <!-- Info Card -->
-                <div class="bg-amber-50 p-4 rounded-xl border border-amber-100 flex gap-3">
-                    <i data-lucide="alert-circle" width="20" height="20" class="text-amber-600 shrink-0 mt-0.5"></i>
-                    <div class="text-sm text-amber-800">
-                        <h4 class="font-bold mb-1">為什麼預覽圖片看起來顏色很亮？</h4>
+                <!-- Info Cards -->
+                <div class="bg-emerald-50 p-5 rounded-2xl border border-emerald-100 flex gap-4">
+                    <div class="bg-emerald-600 p-2 rounded-lg h-fit text-white">
+                        <i data-lucide="check-square" width="20" height="20"></i>
+                    </div>
+                    <div class="text-xs text-emerald-900 leading-relaxed">
+                        <h4 class="font-bold mb-1 underline underline-offset-4">為什麼下載的圖片看起來「綠色很亮」？</h4>
                         <p>
-                        根據您的硬體需求：<br>
-                        • 視覺上的 <b>深綠色 (#007F00)</b> 已被映射為訊號 <b>亮綠色 (#00FF00)</b><br>
-                        • 視覺上的 <b>深藍色 (#00007F)</b> 已被映射為訊號 <b>純藍色 (#0000FF)</b><br>
-                        請直接下載圖片，當傳輸到電子墨水屏時，硬體會顯示出正確的深色調。
+                            這是為了對抗 ACeP 的 **物理暗沉**。因為您提到的 #00FF00 在面板上會縮減為 #005000，我們必須在訊號階段將圖片中的綠色區塊「推向極限明度」。<br>
+                            當這張圖被 App 轉為硬體訊號時，面板會剛好顯示出您原本預期的正常綠色。
                         </p>
                     </div>
                 </div>
-
             </div>
         </div>
     </main>
 
     <script>
-        // Init Icons
         lucide.createIcons();
 
-        // --- Config ---
-        const EINK_PALETTE = [
-            { hex: '#FFFFFF', r: 255, g: 255, b: 255, outR: 255, outG: 255, outB: 255, name: 'White' },
-            { hex: '#000000', r: 0,   g: 0,   b: 0,   outR: 0,   outG: 0,   outB: 0,   name: 'Black' },
-            { hex: '#FF0000', r: 255, g: 0,   b: 0,   outR: 255, outG: 0,   outB: 0,   name: 'Red' },
-            { hex: '#FF7F00', r: 255, g: 127, b: 0,   outR: 255, outG: 127, outB: 0,   name: 'Orange' },
-            { hex: '#FFFF00', r: 255, g: 255, b: 0,   outR: 255, outG: 255, outB: 0,   name: 'Yellow' },
-            // Green: Visual Dark Green (#007F00), Output Lime Green (#00FF00)
-            { hex: '#007F00', r: 0,   g: 127, b: 0,   outR: 0,   outG: 255, outB: 0,   name: 'Green' }, 
-            // Blue: Visual Dark Blue (#00007F), Output Blue (#0000FF)
-            { hex: '#00007F', r: 0,   g: 0,   b: 127, outR: 0,   outG: 0,   outB: 255, name: 'Blue' },  
+        // ACeP Signals (The 7 colors your App expects)
+        const ACEP_SIGNALS = [
+            { r: 255, g: 255, b: 255 }, // White
+            { r: 0,   g: 0,   b: 0   }, // Black
+            { r: 255, g: 0,   b: 0   }, // Red
+            { r: 0,   g: 255, b: 0   }, // Signal Green
+            { r: 0,   g: 0,   b: 255 }, // Signal Blue
+            { r: 255, g: 255, b: 0   }, // Yellow
+            { r: 255, g: 128, b: 0   }  // Orange
         ];
 
-        // --- State ---
+        // ACeP Physical Reality (What the user ACTUALLY sees)
+        const ACEP_PHYSICAL = [
+            { r: 255, g: 255, b: 255 }, 
+            { r: 0,   g: 0,   b: 0   }, 
+            { r: 255, g: 0,   b: 0   }, 
+            { r: 0,   g: 80,  b: 0   }, // Physical Green (#005000 approx)
+            { r: 0,   g: 0,   b: 80  }, // Physical Blue (#000050 approx)
+            { r: 255, g: 255, b: 0   }, 
+            { r: 255, g: 128, b: 0   }  
+        ];
+
         let state = {
-            originalImageSrc: null,
-            isProcessing: false,
-            useDithering: true,
-            brightness: 0,
-            contrast: 0,
-            outputWidth: 800,
-            maintainAspect: true
+            src: null,
+            vibrance: 140,
+            gamma: 1.3,
+            boost: 1.5,
+            isSimulating: false
         };
 
-        // --- Elements ---
         const els = {
-            fileInput: document.getElementById('fileInput'),
-            ditheringBtn: document.getElementById('dithering-btn'),
-            ditheringLabel: document.getElementById('dithering-label'),
-            widthInput: document.getElementById('width-input'),
-            brightnessInput: document.getElementById('brightness-input'),
-            brightnessVal: document.getElementById('brightness-val'),
-            contrastInput: document.getElementById('contrast-input'),
-            contrastVal: document.getElementById('contrast-val'),
-            resetBtn: document.getElementById('reset-btn'),
-            downloadBtn: document.getElementById('download-btn'),
-            
-            // Views
-            loadingOverlay: document.getElementById('loading-overlay'),
-            emptyState: document.getElementById('empty-state'),
-            processedImg: document.getElementById('processed-img'),
-            originalPreviewContainer: document.getElementById('original-preview-container'),
-            originalImg: document.getElementById('original-img'),
-            paletteContainer: document.getElementById('palette-container')
+            file: document.getElementById('fileInput'),
+            vibe: document.getElementById('vibe-input'),
+            gamma: document.getElementById('gamma-input'),
+            boost: document.getElementById('boost-input'),
+            simBtn: document.getElementById('sim-btn'),
+            simDot: document.getElementById('sim-dot'),
+            mainImg: document.getElementById('main-img'),
+            loading: document.getElementById('loading'),
+            empty: document.getElementById('empty-state'),
+            download: document.getElementById('download-btn'),
+            reset: document.getElementById('reset-btn')
         };
 
-        // --- Init UI ---
-        function initPalette() {
-            els.paletteContainer.innerHTML = EINK_PALETTE.map(color => {
-                const isDifferent = (color.r !== color.outR || color.g !== color.outG || color.b !== color.outB);
-                const outHex = '#' + ((1 << 24) + (color.outR << 16) + (color.outG << 8) + color.outB).toString(16).slice(1).toUpperCase();
-                
-                return `
-                <div class="flex flex-none items-center gap-2 p-2 rounded-lg border border-slate-100 bg-slate-50 min-w-[140px] sm:min-w-0">
-                    <div class="flex flex-col items-center gap-1">
-                        <!-- Visual Color -->
-                        <div class="w-8 h-8 rounded-full shadow-sm border border-slate-200 ring-2 ring-white"
-                             style="background-color: rgb(${color.r},${color.g},${color.b})"
-                             title="螢幕顯示顏色"></div>
-                        ${isDifferent ? `
-                        <div class="text-[10px] text-slate-400">⬇</div>
-                        <div class="w-4 h-4 rounded-full shadow-sm border border-slate-200"
-                             style="background-color: rgb(${color.outR},${color.outG},${color.outB})"
-                             title="檔案輸出顏色"></div>
-                        ` : ''}
-                    </div>
-                    <div class="flex flex-col">
-                        <span class="text-xs font-bold text-slate-700">${color.name}</span>
-                        <span class="text-[10px] text-slate-400 font-mono">Out: ${outHex}</span>
-                    </div>
-                </div>
-                `;
-            }).join('');
-        }
-        initPalette();
-
-        // --- Logic ---
-
-        function getColorDistance(r1, g1, b1, r2, g2, b2) {
-            return Math.pow(r2 - r1, 2) + Math.pow(g2 - g1, 2) + Math.pow(b2 - b1, 2);
+        function updateUI() {
+            document.getElementById('vibe-val').textContent = '+' + (state.vibrance - 100) + '%';
+            document.getElementById('gamma-val').textContent = state.gamma.toFixed(2);
+            document.getElementById('boost-val').textContent = state.boost.toFixed(1) + 'x';
+            
+            els.simBtn.classList.toggle('bg-rose-500', state.isSimulating);
+            els.simBtn.classList.toggle('bg-slate-200', !state.isSimulating);
+            els.simDot.classList.toggle('translate-x-6', state.isSimulating);
         }
 
-        function getNearestColor(r, g, b) {
-            let minDistance = Infinity;
-            let nearest = EINK_PALETTE[0];
-
-            for (let i = 0; i < EINK_PALETTE.length; i++) {
-                const color = EINK_PALETTE[i];
-                // Compare with Visual Color
-                const dist = getColorDistance(r, g, b, color.r, color.g, color.b);
-                if (dist < minDistance) {
-                    minDistance = dist;
-                    nearest = color;
-                }
+        function getNearestColorIndex(r, g, b, palette) {
+            let minD = Infinity, index = 0;
+            for (let i = 0; i < palette.length; i++) {
+                const c = palette[i];
+                let d = Math.pow(r - c.r, 2) + Math.pow(g - c.g, 2) + Math.pow(b - c.b, 2);
+                if (d < minD) { minD = d; index = i; }
             }
-            return nearest;
+            return index;
         }
 
-        function triggerProcess() {
-            if (!state.originalImageSrc) return;
-            
-            // Show Loading
-            els.loadingOverlay.classList.remove('hidden');
-            
-            // Use setTimeout to allow UI to update (show loading spinner) before heavy calculation
+        function process() {
+            if (!state.src) return;
+            els.loading.classList.remove('hidden');
+
             setTimeout(() => {
-                processImage();
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+
+                    // 1. Initial Filters
+                    ctx.filter = `saturate(${state.vibrance}%)`;
+                    ctx.drawImage(img, 0, 0);
+                    ctx.filter = 'none';
+
+                    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const data = imgData.data;
+
+                    // 2. Hardware Compensation Loop
+                    const gInv = 1 / state.gamma;
+                    const bFactor = state.boost;
+
+                    for (let i = 0; i < data.length; i += 4) {
+                        let r = data[i], g = data[i+1], b = data[i+2];
+
+                        // Gamma correction (Open up dark areas)
+                        r = 255 * Math.pow(r / 255, gInv);
+                        g = 255 * Math.pow(g / 255, gInv);
+                        b = 255 * Math.pow(b / 255, gInv);
+
+                        // Specific Green/Blue Boost (Since they are physically dim)
+                        // If green is dominant, boost it
+                        if (g > r && g > b) {
+                            g = Math.min(255, g * bFactor);
+                        }
+                        // If blue is dominant, boost it
+                        if (b > r && b > g) {
+                            b = Math.min(255, b * bFactor);
+                        }
+
+                        data[i] = r; data[i+1] = g; data[i+2] = b;
+                    }
+                    ctx.putImageData(imgData, 0, 0);
+
+                    // 3. Physical Simulation (If enabled)
+                    if (state.isSimulating) {
+                        const simData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                        const d = simData.data;
+                        for (let y = 0; y < canvas.height; y++) {
+                            for (let x = 0; x < canvas.width; x++) {
+                                const idx = (y * canvas.width + x) * 4;
+                                const r = d[idx], g = d[idx+1], b = d[idx+2];
+                                
+                                // Map signal pixels to "Physical Reality"
+                                const colorIdx = getNearestColorIndex(r, g, b, ACEP_SIGNALS);
+                                const physical = ACEP_PHYSICAL[colorIdx];
+                                
+                                d[idx] = physical.r; d[idx+1] = physical.g; d[idx+2] = physical.b;
+                                
+                                // Simple Error Diffusion for better preview
+                                const er = r - physical.r, eg = g - physical.g, eb = b - physical.b;
+                                const distribute = (dx, dy, f) => {
+                                    const ni = ((y+dy)*canvas.width + (x+dx)) * 4;
+                                    if (x+dx >= 0 && x+dx < canvas.width && y+dy < canvas.height) {
+                                        d[ni] += er * f; d[ni+1] += eg * f; d[ni+2] += eb * f;
+                                    }
+                                };
+                                distribute(1,0,7/16); distribute(-1,1,3/16); distribute(0,1,5/16); distribute(1,1,1/16);
+                            }
+                        }
+                        ctx.putImageData(simData, 0, 0);
+                    }
+
+                    els.mainImg.src = canvas.toDataURL('image/png');
+                    els.mainImg.classList.remove('hidden');
+                    els.empty.classList.add('hidden');
+                    els.download.classList.remove('hidden');
+                    els.loading.classList.add('hidden');
+                };
+                img.src = state.src;
             }, 50);
         }
 
-        function processImage() {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const img = new Image();
-
-            img.onload = () => {
-                // 1. Setup Size
-                let targetWidth = state.outputWidth;
-                let targetHeight = img.height * (state.outputWidth / img.width);
-                
-                canvas.width = targetWidth;
-                canvas.height = targetHeight;
-
-                // 2. Filter & Draw
-                // Use canvas filter for brightness/contrast
-                ctx.filter = `brightness(${100 + state.brightness}%) contrast(${100 + state.contrast}%)`;
-                ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
-                ctx.filter = 'none';
-
-                // 3. Get Data
-                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                const data = imageData.data;
-                const width = canvas.width;
-                const height = canvas.height;
-
-                // 4. Pixel Loop
-                for (let y = 0; y < height; y++) {
-                    for (let x = 0; x < width; x++) {
-                        const idx = (y * width + x) * 4;
-                        
-                        const oldR = data[idx];
-                        const oldG = data[idx + 1];
-                        const oldB = data[idx + 2];
-                        
-                        // Find Nearest (Visual)
-                        const nearest = getNearestColor(oldR, oldG, oldB);
-
-                        // Set Output (Signal)
-                        data[idx] = nearest.outR;
-                        data[idx + 1] = nearest.outG;
-                        data[idx + 2] = nearest.outB;
-                        data[idx + 3] = 255; // Alpha
-
-                        // Dithering (Floyd-Steinberg)
-                        if (state.useDithering) {
-                            // Calculate Error based on Visual Color
-                            const errR = oldR - nearest.r;
-                            const errG = oldG - nearest.g;
-                            const errB = oldB - nearest.b;
-
-                            const distributeError = (offsetX, offsetY, factor) => {
-                                if (x + offsetX >= 0 && x + offsetX < width && y + offsetY >= 0 && y + offsetY < height) {
-                                    const nIdx = ((y + offsetY) * width + (x + offsetX)) * 4;
-                                    data[nIdx]     = Math.min(255, Math.max(0, data[nIdx]     + errR * factor));
-                                    data[nIdx + 1] = Math.min(255, Math.max(0, data[nIdx + 1] + errG * factor));
-                                    data[nIdx + 2] = Math.min(255, Math.max(0, data[nIdx + 2] + errB * factor));
-                                }
-                            };
-
-                            distributeError(1, 0, 7/16);
-                            distributeError(-1, 1, 3/16);
-                            distributeError(0, 1, 5/16);
-                            distributeError(1, 1, 1/16);
-                        }
-                    }
-                }
-
-                // 5. Output
-                ctx.putImageData(imageData, 0, 0);
-                const resultUrl = canvas.toDataURL('image/png');
-                
-                // Update UI
-                els.processedImg.src = resultUrl;
-                els.processedImg.classList.remove('hidden');
-                els.emptyState.classList.add('hidden');
-                els.downloadBtn.classList.remove('hidden');
-                els.downloadBtn.classList.add('flex'); // Ensure flex is added back
-                els.loadingOverlay.classList.add('hidden');
-            };
-
-            img.src = state.originalImageSrc;
-        }
-
-        // --- Event Listeners ---
-
-        els.fileInput.addEventListener('change', (e) => {
+        // Event Listeners
+        els.file.onchange = e => {
             const file = e.target.files[0];
             if (file) {
                 const reader = new FileReader();
-                reader.onload = (event) => {
-                    state.originalImageSrc = event.target.result;
-                    els.originalImg.src = state.originalImageSrc;
-                    els.originalPreviewContainer.classList.remove('hidden');
-                    triggerProcess();
-                };
+                reader.onload = ev => { state.src = ev.target.result; process(); };
                 reader.readAsDataURL(file);
             }
-        });
+        };
 
-        els.ditheringBtn.addEventListener('click', () => {
-            state.useDithering = !state.useDithering;
-            // Update Button UI
-            if (state.useDithering) {
-                els.ditheringBtn.textContent = '已開啟抖動 (適合照片)';
-                els.ditheringBtn.classList.replace('bg-white', 'bg-indigo-600');
-                els.ditheringBtn.classList.replace('text-slate-600', 'text-white');
-                els.ditheringBtn.classList.replace('border-slate-300', 'border-indigo-600');
-                els.ditheringBtn.classList.replace('hover:bg-slate-50', 'hover:bg-indigo-700');
-                els.ditheringLabel.textContent = 'Floyd-Steinberg 抖動';
-            } else {
-                els.ditheringBtn.textContent = '關閉抖動 (適合圖表/色塊)';
-                els.ditheringBtn.classList.replace('bg-indigo-600', 'bg-white');
-                els.ditheringBtn.classList.replace('text-white', 'text-slate-600');
-                els.ditheringBtn.classList.replace('border-indigo-600', 'border-slate-300');
-                els.ditheringBtn.classList.replace('hover:bg-indigo-700', 'hover:bg-slate-50');
-                els.ditheringLabel.textContent = '最近鄰轉換';
-            }
-            triggerProcess();
-        });
+        els.vibe.oninput = e => { state.vibrance = +e.target.value; updateUI(); };
+        els.vibe.onchange = process;
+        
+        els.gamma.oninput = e => { state.gamma = e.target.value / 100; updateUI(); };
+        els.gamma.onchange = process;
 
-        els.widthInput.addEventListener('change', (e) => {
-            state.outputWidth = Number(e.target.value);
-            triggerProcess();
-        });
+        els.boost.oninput = e => { state.boost = e.target.value / 100; updateUI(); };
+        els.boost.onchange = process;
 
-        els.brightnessInput.addEventListener('input', (e) => {
-            state.brightness = Number(e.target.value);
-            els.brightnessVal.textContent = state.brightness + '%';
-        });
-        // Only trigger process on change (release slider) to avoid lag
-        els.brightnessInput.addEventListener('change', triggerProcess);
+        els.simBtn.onclick = () => { state.isSimulating = !state.isSimulating; updateUI(); process(); };
 
-        els.contrastInput.addEventListener('input', (e) => {
-            state.contrast = Number(e.target.value);
-            els.contrastVal.textContent = state.contrast + '%';
-        });
-        els.contrastInput.addEventListener('change', triggerProcess);
+        els.reset.onclick = () => {
+            state = { src: state.src, vibrance: 140, gamma: 1.3, boost: 1.5, isSimulating: false };
+            els.vibe.value = 140; els.gamma.value = 130; els.boost.value = 150;
+            updateUI(); process();
+        };
 
-        els.resetBtn.addEventListener('click', () => {
-            state.brightness = 0;
-            state.contrast = 0;
-            state.outputWidth = 800;
-            state.useDithering = true;
+        els.download.onclick = () => {
+            // Save clean optimized version (without simulation overlay)
+            const oldSim = state.isSimulating;
+            state.isSimulating = false;
             
-            // Reset UI Values
-            els.brightnessInput.value = 0;
-            els.brightnessVal.textContent = '0%';
-            els.contrastInput.value = 0;
-            els.contrastVal.textContent = '0%';
-            els.widthInput.value = 800;
-            
-            // Reset Dithering Button UI
-            els.ditheringBtn.textContent = '已開啟抖動 (適合照片)';
-            els.ditheringBtn.classList.remove('bg-white', 'text-slate-600', 'border-slate-300', 'hover:bg-slate-50');
-            els.ditheringBtn.classList.add('bg-indigo-600', 'text-white', 'border-indigo-600', 'hover:bg-indigo-700');
-            els.ditheringLabel.textContent = 'Floyd-Steinberg 抖動';
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = img.width; canvas.height = img.height;
+                ctx.filter = `saturate(${state.vibrance}%)`;
+                ctx.drawImage(img, 0, 0);
+                const id = ctx.getImageData(0,0,canvas.width,canvas.height);
+                const d = id.data;
+                const g = 1/state.gamma;
+                for (let i=0; i<d.length; i+=4) {
+                    d[i]=255*Math.pow(d[i]/255,g); d[i+1]=255*Math.pow(d[i+1]/255,g); d[i+2]=255*Math.pow(d[i+2]/255,g);
+                    if(d[i+1]>d[i] && d[i+1]>d[i+2]) d[i+1]=Math.min(255, d[i+1]*state.boost);
+                    if(d[i+2]>d[i] && d[i+2]>d[i+1]) d[i+2]=Math.min(255, d[i+2]*state.boost);
+                }
+                ctx.putImageData(id, 0, 0);
+                const link = document.createElement('a');
+                link.download = 'acep_calibrated.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                state.isSimulating = oldSim; // Restore view
+            };
+            img.src = state.src;
+        };
 
-            triggerProcess();
-        });
-
-        els.downloadBtn.addEventListener('click', () => {
-            if (!els.processedImg.src) return;
-            const link = document.createElement('a');
-            link.href = els.processedImg.src;
-            link.download = 'eink-converted.png';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        });
-
+        updateUI();
     </script>
 </body>
 </html>
