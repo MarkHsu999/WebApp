@@ -35,18 +35,14 @@
             text-shadow: none !important;
         }
 
-        /* 強制文字轉黑，但排除帶有特定背景的元素 */
-        .e-ink-mode .text-white:not(.bg-black *):not(.bg-black),
-        .e-ink-mode .text-gray-100:not(.bg-black *),
-        .e-ink-mode .text-gray-200,
-        .e-ink-mode .text-gray-300,
-        .e-ink-mode .text-gray-400,
-        .e-ink-mode .text-orange-400,
-        .e-ink-mode .text-orange-500,
-        .e-ink-mode .text-yellow-400,
-        .e-ink-mode .text-green-400,
-        .e-ink-mode .text-green-500 {
+        /* 廣泛強制文字轉黑，排除黑底區塊 */
+        .e-ink-mode *:not(.bg-black *):not(.bg-black):not(.bg-green-600\/20 *) {
             color: #000000 !important;
+        }
+
+        /* 強制 SVG 線條轉黑 */
+        .e-ink-mode svg:not(.bg-black *) {
+            stroke: #000000 !important;
         }
 
         /* 背景轉白並加框 */
@@ -54,19 +50,21 @@
         .e-ink-mode .bg-gray-900,
         .e-ink-mode .bg-gray-700,
         .e-ink-mode .bg-orange-900\/20,
-        .e-ink-mode .bg-gray-700\/50 {
+        .e-ink-mode .bg-gray-700\/50,
+        .e-ink-mode .bg-white\/10 {
             background-color: #ffffff !important;
             border: 1px solid #000000 !important;
         }
 
-        /* 標題與重點區塊轉淺灰 */
-        .e-ink-mode .bg-orange-600,
-        .e-ink-mode .bg-blue-600,
+        /* 標題區塊轉淺灰背景 */
         .e-ink-mode .bg-red-600,
+        .e-ink-mode .bg-blue-600,
+        .e-ink-mode .bg-orange-600,
         .e-ink-mode .bg-green-600,
         .e-ink-mode .bg-yellow-600,
-        .e-ink-mode .bg-purple-600 {
-            background-color: #f0f0f0 !important;
+        .e-ink-mode .bg-purple-600,
+        .e-ink-mode .bg-gray-700 {
+            background-color: #f3f3f3 !important;
             border: 2px solid #000000 !important;
         }
 
@@ -77,31 +75,38 @@
 
         /* 圖片處理 */
         .e-ink-mode img {
-            filter: grayscale(100%) contrast(1.5);
+            filter: grayscale(100%) contrast(1.2);
             border-bottom: 1px solid #000000;
         }
 
-        /* 已完成狀態與特定黑底元素：確保文字為白 */
-        .e-ink-mode .bg-black {
+        /* 黑底反白區塊 (保持高對比) */
+        .e-ink-mode .bg-black,
+        .e-ink-mode .bg-green-500 {
             background-color: #000000 !important;
             color: #ffffff !important;
         }
-        .e-ink-mode .bg-black * {
+        .e-ink-mode .bg-black *,
+        .e-ink-mode .bg-green-500 * {
             color: #ffffff !important;
+            stroke: #ffffff !important;
         }
 
-        /* 已完成狀態按鈕：黑底白字以示區別 */
+        /* 已完成狀態按鈕：保持黑底白字以示區別 */
         .e-ink-mode .bg-green-600\/20 {
             background-color: #000000 !important;
             color: #ffffff !important;
         }
-        .e-ink-mode .bg-green-600\/20 * {
-            color: #ffffff !important;
-        }
 
-        /* 普通按鈕加強邊框 */
+        /* 普通按鈕強化 */
         .e-ink-mode button {
             border: 1px solid #000000 !important;
+            background-color: #ffffff !important;
+        }
+        
+        /* 選中的 Tab 強化 */
+        .e-ink-mode .border-orange-500 {
+            border-bottom-color: #000000 !important;
+            background-color: #eeeeee !important;
         }
     </style>
 </head>
@@ -202,7 +207,7 @@
         const DayTab = ({ day, isSelected, onClick }) => (
             <button
                 onClick={onClick}
-                className={`flex-1 py-3 px-1 text-sm font-bold uppercase transition-all duration-300 border-b-4 ${
+                className={`flex-1 py-4 px-1 text-base font-black uppercase transition-all duration-300 border-b-4 ${
                 isSelected
                     ? 'border-orange-500 text-orange-500 bg-gray-800'
                     : 'border-transparent text-gray-400 hover:text-gray-200 hover:bg-gray-800'
@@ -216,9 +221,9 @@
             const isCompleted = completedCount >= exercise.sets;
             
             return (
-                <div className={`bg-gray-800 rounded-xl overflow-hidden shadow-lg mb-6 border transition-all duration-300 ${isCompleted ? 'border-green-500/50 opacity-90' : 'border-gray-700'}`}>
+                <div className={`bg-gray-800 rounded-2xl overflow-hidden shadow-xl border transition-all duration-300 flex flex-col h-full ${isCompleted ? 'border-green-500/50 opacity-90' : 'border-gray-700'}`}>
                     <div 
-                        className="relative h-48 bg-gray-700 group cursor-pointer overflow-hidden" 
+                        className="relative h-56 sm:h-64 bg-gray-700 group cursor-pointer overflow-hidden" 
                         onClick={() => onImageClick(exercise.img)}
                     >
                         <img 
@@ -227,66 +232,66 @@
                             className={`w-full h-full object-cover transition-all duration-500 ${isCompleted ? 'grayscale opacity-50' : 'opacity-80 group-hover:opacity-100 group-hover:scale-105'}`}
                         />
                         <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                            <ZoomIn className="w-8 h-8 text-white" />
+                            <ZoomIn className="w-10 h-10 text-white" />
                         </div>
-                        <div className="absolute top-2 left-2 bg-black/70 px-3 py-1 rounded text-xs font-bold text-orange-400 border border-orange-500/50">
+                        <div className="absolute top-3 left-3 bg-black/70 px-4 py-1.5 rounded-lg text-sm font-black text-orange-400 border border-orange-500/50">
                             動作 {index + 1}
                         </div>
                         {isCompleted && (
                              <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                                <div className="bg-green-500 text-white px-4 py-2 rounded-full font-bold flex items-center gap-2 shadow-lg">
-                                    <CheckCircle className="w-5 h-5" /> 已達標
+                                <div className="bg-green-500 text-white px-6 py-3 rounded-full font-black text-lg flex items-center gap-2 shadow-2xl">
+                                    <CheckCircle className="w-6 h-6" /> 已達標
                                 </div>
                              </div>
                         )}
-                        <div className="absolute bottom-0 w-full bg-gradient-to-t from-gray-900 to-transparent p-4 pt-12 pointer-events-none">
-                            <h3 className="text-xl font-bold text-white drop-shadow-md">{exercise.name}</h3>
+                        <div className="absolute bottom-0 w-full bg-gradient-to-t from-gray-900 to-transparent p-6 pt-16 pointer-events-none">
+                            <h3 className="text-2xl font-black text-white drop-shadow-lg">{exercise.name}</h3>
                         </div>
                     </div>
                     
-                    <div className="p-4 space-y-4">
-                        <div className="grid grid-cols-4 gap-2 bg-gray-700/50 p-3 rounded-lg">
+                    <div className="p-5 space-y-5 flex-grow flex flex-col">
+                        <div className="grid grid-cols-4 gap-2 bg-gray-700/50 p-4 rounded-xl">
                             <div className="text-center border-r border-gray-600">
-                                <div className="text-[10px] text-gray-400 uppercase tracking-wider">目標組數</div>
-                                <div className="text-lg font-bold text-white">{exercise.sets}</div>
+                                <div className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">目標組數</div>
+                                <div className="text-xl font-black text-white">{exercise.sets}</div>
                             </div>
                             <div className="text-center border-r border-gray-600">
-                                <div className="text-[10px] text-gray-400 uppercase tracking-wider">次數</div>
-                                <div className="text-lg font-bold text-white">{exercise.reps}</div>
+                                <div className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">次數</div>
+                                <div className="text-xl font-black text-white">{exercise.reps}</div>
                             </div>
                             <div className="text-center border-r border-gray-600">
-                                <div className="text-[10px] text-gray-400 uppercase tracking-wider flex justify-center items-center gap-1">
-                                    <Scale className="w-3 h-3" /> 重量
+                                <div className="text-xs text-gray-400 font-bold uppercase tracking-wider flex justify-center items-center gap-1 mb-1">
+                                    <Scale className="w-3.5 h-3.5" /> 重量
                                 </div>
-                                <div className="text-lg font-bold text-yellow-400 leading-tight">{exercise.weight}</div>
+                                <div className="text-xl font-black text-yellow-400 leading-tight">{exercise.weight}</div>
                             </div>
                             <div className="text-center">
-                                <div className="text-[10px] text-gray-400 uppercase tracking-wider">休息</div>
-                                <div className="text-lg font-bold text-white">{exercise.rest}</div>
+                                <div className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">休息</div>
+                                <div className="text-xl font-black text-white">{exercise.rest}</div>
                             </div>
                         </div>
 
                         {/* Set Tracker Button */}
                         <button 
                             onClick={(e) => { e.stopPropagation(); onAddSet(); }}
-                            className={`w-full py-3 rounded-lg font-bold flex items-center justify-center gap-3 transition-all ${
+                            className={`w-full py-4 rounded-xl font-black text-lg flex items-center justify-center gap-3 transition-all ${
                                 isCompleted 
                                 ? 'bg-green-600/20 text-green-400 border border-green-600/50' 
-                                : 'bg-orange-600 hover:bg-orange-500 text-white shadow-lg'
+                                : 'bg-orange-600 hover:bg-orange-500 text-white shadow-xl transform active:scale-95'
                             }`}
                         >
-                            {isCompleted ? <CheckCircle className="w-5 h-5" /> : <Zap className="w-5 h-5" />}
+                            {isCompleted ? <CheckCircle className="w-6 h-6" /> : <Zap className="w-6 h-6" />}
                             {isCompleted ? `全部完成 (${completedCount}/${exercise.sets})` : `完成一組 (${completedCount} / ${exercise.sets})`}
                         </button>
 
-                        <div className="bg-orange-900/20 border-l-4 border-orange-500 p-3 rounded-r">
-                            <p className="text-sm text-gray-200">
-                                <span className="font-bold text-orange-400">技巧：</span>{exercise.tip}
+                        <div className="bg-orange-900/20 border-l-4 border-orange-500 p-4 rounded-r-xl flex-grow">
+                            <p className="text-base text-gray-100 leading-relaxed">
+                                <span className="font-black text-orange-400 text-lg">技巧：</span>{exercise.tip}
                             </p>
                         </div>
                         
-                        <div className="flex items-center gap-2 text-xs text-gray-500">
-                            <Dumbbell className="w-4 h-4" />
+                        <div className="flex items-center gap-2 text-sm text-gray-400 pt-2 mt-auto font-medium">
+                            <Dumbbell className="w-5 h-5" />
                             <span>{exercise.equipment}</span>
                         </div>
                     </div>
@@ -295,20 +300,20 @@
         };
 
         const RestView = ({ data }) => (
-            <div className="flex flex-col items-center justify-center py-12 px-4 text-center h-full">
-                <div className="w-24 h-24 bg-gray-700 rounded-full flex items-center justify-center mb-6">
-                <Clock className="w-12 h-12 text-green-400" />
+            <div className="flex flex-col items-center justify-center py-16 px-6 text-center h-full">
+                <div className="w-28 h-28 bg-gray-700 rounded-full flex items-center justify-center mb-8 shadow-inner">
+                <Clock className="w-14 h-14 text-green-400" />
                 </div>
-                <h2 className="text-3xl font-bold text-white mb-2">{data.title}</h2>
-                <p className="text-gray-400 mb-8 max-w-xs mx-auto">{data.focus}</p>
-                <div className="bg-gray-800 p-6 rounded-xl border border-gray-700 w-full max-w-sm">
-                    <h3 className="text-lg font-bold text-green-400 mb-4 flex items-center justify-center gap-2">
-                        <Info className="w-5 h-5" /> 恢復指南
+                <h2 className="text-4xl font-black text-white mb-4 tracking-tight">{data.title}</h2>
+                <p className="text-xl text-gray-400 mb-10 max-w-md mx-auto">{data.focus}</p>
+                <div className="bg-gray-800 p-8 rounded-3xl border border-gray-700 w-full max-w-lg shadow-2xl">
+                    <h3 className="text-2xl font-black text-green-400 mb-6 flex items-center justify-center gap-3">
+                        <Info className="w-7 h-7" /> 恢復指南
                     </h3>
-                    <ul className="text-left space-y-3">
+                    <ul className="text-left space-y-5">
                         {data.tips.map((tip, idx) => (
-                        <li key={idx} className="flex items-start gap-3 text-gray-300 text-sm">
-                            <span className="w-1.5 h-1.5 bg-green-500 rounded-full mt-2 flex-shrink-0" />
+                        <li key={idx} className="flex items-start gap-4 text-gray-200 text-lg leading-snug">
+                            <span className="w-2 h-2 bg-green-500 rounded-full mt-2.5 flex-shrink-0 shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
                             {tip}
                         </li>
                         ))}
@@ -320,12 +325,12 @@
         const ImageModal = ({ src, onClose }) => {
             if (!src) return null;
             return (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 p-4 backdrop-blur-sm" onClick={onClose}>
-                    <div className="relative w-full max-w-3xl">
-                        <button onClick={onClose} className="absolute -top-12 right-0 text-white p-2 bg-white/10 rounded-full hover:bg-white/20">
-                            <XIcon className="w-6 h-6" />
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 p-4 backdrop-blur-md" onClick={onClose}>
+                    <div className="relative w-full max-w-5xl">
+                        <button onClick={onClose} className="absolute -top-14 right-0 text-white p-3 bg-white/10 rounded-full hover:bg-white/20 transition-colors">
+                            <XIcon className="w-8 h-8" />
                         </button>
-                        <img src={src} className="w-full h-auto max-h-[85vh] object-contain rounded-lg shadow-2xl border border-gray-700" onClick={(e) => e.stopPropagation()} />
+                        <img src={src} className="w-full h-auto max-h-[80vh] object-contain rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-gray-700" onClick={(e) => e.stopPropagation()} />
                     </div>
                 </div>
             );
@@ -375,44 +380,44 @@
             };
 
             return (
-                <div className={`min-h-screen transition-colors duration-300 ${isEInk ? 'e-ink-mode' : 'bg-gray-900 text-gray-100'}`}>
+                <div className={`min-h-screen transition-colors duration-300 font-sans ${isEInk ? 'e-ink-mode' : 'bg-gray-900 text-gray-100'}`}>
                     
                     {/* Fixed Progress Bar */}
-                    <div className="sticky top-0 z-30 w-full h-1.5 bg-gray-800 overflow-hidden">
+                    <div className="sticky top-0 z-40 w-full h-2 bg-gray-800 overflow-hidden">
                         <div 
-                            className="h-full bg-blue-500 transition-all duration-500 ease-out progress-bar-fill"
+                            className="h-full bg-blue-500 transition-all duration-700 ease-in-out progress-bar-fill shadow-[0_0_10px_rgba(59,130,246,0.5)]"
                             style={{ width: `${stats.percent}%` }}
                         ></div>
                     </div>
 
                     {/* Header */}
-                    <div className={`bg-gray-800 border-b border-gray-700 z-20 shadow-xl`}>
-                        <div className="max-w-md mx-auto px-4 py-4 flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="bg-orange-600 p-2 rounded-lg">
-                                    <Dumbbell className="w-6 h-6 text-white" />
+                    <div className={`bg-gray-800 border-b border-gray-700 z-30 shadow-2xl`}>
+                        <div className="max-w-6xl mx-auto px-4 py-5 flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                                <div className="bg-orange-600 p-2.5 rounded-xl shadow-lg">
+                                    <Dumbbell className="w-7 h-7 text-white" />
                                 </div>
                                 <div>
-                                    <h1 className="text-xl font-bold text-white leading-none">Bear Mode</h1>
-                                    <p className="text-xs text-gray-400 mt-1">訓練進度: {Math.round(stats.percent)}%</p>
+                                    <h1 className="text-2xl font-black text-white leading-none tracking-tight">Bear Mode</h1>
+                                    <p className="text-sm font-bold text-gray-400 mt-1.5">訓練進度: {Math.round(stats.percent)}%</p>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-4">
                                 <button 
                                     onClick={() => setIsEInk(!isEInk)}
-                                    className={`px-3 py-1 rounded-full text-xs font-bold transition-all border ${
+                                    className={`px-4 py-2 rounded-full text-sm font-black tracking-wide transition-all border-2 ${
                                         isEInk 
                                         ? 'bg-black text-white border-black' 
-                                        : 'bg-gray-700 text-gray-300 border-gray-600 hover:bg-gray-600'
+                                        : 'bg-gray-700 text-gray-200 border-gray-600 hover:bg-gray-600 hover:border-gray-500'
                                     }`}
                                 >
-                                    {isEInk ? '一般模式' : 'e-ink 模式'}
+                                    {isEInk ? '一般模式' : 'E-INK 模式'}
                                 </button>
                             </div>
                         </div>
                         
                         {/* Day Tabs */}
-                        <div className="flex overflow-x-auto max-w-md mx-auto scrollbar-hide">
+                        <div className="flex overflow-x-auto max-w-6xl mx-auto scrollbar-hide">
                             {Object.keys(scheduleData).map((day) => (
                                 <DayTab 
                                     key={day} 
@@ -428,20 +433,20 @@
                     {modalImage && <ImageModal src={modalImage} onClose={() => setModalImage(null)} />}
 
                     {/* Main Content */}
-                    <div className="max-w-md mx-auto px-4 py-6 pb-24">
+                    <div className="max-w-6xl mx-auto px-5 py-8 pb-32">
                         
                         {/* Day Header Info */}
-                        <div className={`rounded-2xl p-6 mb-8 text-white shadow-lg ${currentData.color} bg-opacity-90 backdrop-blur-sm transition-colors duration-500`}>
-                            <div className="flex items-start justify-between mb-2">
-                                <h2 className="text-2xl font-bold">{currentData.title}</h2>
+                        <div className={`rounded-3xl p-8 mb-10 text-white shadow-2xl ${currentData.color} bg-opacity-90 backdrop-blur-md transition-all duration-500 border border-white/10`}>
+                            <div className="flex items-start justify-between mb-4">
+                                <h2 className="text-3xl font-black tracking-tight">{currentData.title}</h2>
                                 {currentData.exercises && (
-                                    <span className="bg-black/20 px-2 py-1 rounded text-xs font-mono">
+                                    <span className="bg-black/30 backdrop-blur-md px-4 py-1.5 rounded-xl text-sm font-black font-mono border border-white/10">
                                         {stats.current} / {stats.total} 組
                                     </span>
                                 )}
                             </div>
-                            <p className="text-white/80 text-sm flex items-center gap-2">
-                                <Flame className="w-4 h-4" /> 重點：{currentData.focus}
+                            <p className="text-white/90 text-lg font-bold flex items-center gap-3">
+                                <Flame className="w-6 h-6 text-orange-300" /> 重點：{currentData.focus}
                             </p>
                         </div>
 
@@ -449,29 +454,31 @@
                         {currentData.isRest ? (
                             <RestView data={currentData} />
                         ) : (
-                            <div className="space-y-4">
-                                {currentData.exercises.map((exercise, index) => (
-                                    <ExerciseCard 
-                                        key={index} 
-                                        exercise={exercise} 
-                                        index={index}
-                                        completedCount={(progressState[selectedDay] || {})[exercise.name] || 0}
-                                        onAddSet={() => handleAddSet(exercise.name)}
-                                        onImageClick={setModalImage}
-                                    />
-                                ))}
+                            <div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                                    {currentData.exercises.map((exercise, index) => (
+                                        <ExerciseCard 
+                                            key={index} 
+                                            exercise={exercise} 
+                                            index={index}
+                                            completedCount={(progressState[selectedDay] || {})[exercise.name] || 0}
+                                            onAddSet={() => handleAddSet(exercise.name)}
+                                            onImageClick={setModalImage}
+                                        />
+                                    ))}
+                                </div>
                                 
-                                <div className="mt-8 text-center">
-                                    <p className="text-gray-500 text-sm mb-4">全部完成後別忘了伸展</p>
+                                <div className="mt-16 text-center max-w-lg mx-auto">
+                                    <p className="text-gray-400 text-base font-bold mb-5 italic">「力量不是來自於贏得戰鬥，而是來自於你的奮鬥。」</p>
                                     <button 
                                         onClick={() => {
                                             const newState = { ...progressState[selectedDay] };
                                             currentData.exercises.forEach(ex => newState[ex.name] = ex.sets);
                                             setProgressState(prev => ({ ...prev, [selectedDay]: newState }));
                                         }}
-                                        className="w-full py-4 bg-gray-800 hover:bg-gray-700 text-green-500 font-bold rounded-xl border border-gray-700 transition-colors flex items-center justify-center gap-2"
+                                        className="w-full py-5 bg-gray-800 hover:bg-gray-700 text-green-400 font-black text-xl rounded-2xl border-2 border-gray-700 hover:border-green-500/50 transition-all shadow-2xl flex items-center justify-center gap-3 transform active:scale-95"
                                     >
-                                        <Calendar className="w-5 h-5" /> 標記今日為已完成
+                                        <Calendar className="w-7 h-7" /> 標記今日為已完成
                                     </button>
                                 </div>
                             </div>
