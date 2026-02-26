@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>厚切壯熊：動作細節完全指南</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .check-btn:checked + label {
+            background-color: #10b981;
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
+        /* 動作動畫軌跡 */
+        @keyframes row-move { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+        @keyframes press-move { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(8px, -18px); } }
+        @keyframes pullover-swing { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(90deg); } }
+        @keyframes fly-move { 0%, 100% { transform: scaleX(1); transform-origin: center; } 50% { transform: scaleX(1.4); transform-origin: center; } }
+        @keyframes skull-crush { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(100deg); } }
+        
+        .animate-row { animation: row-move 1.5s infinite ease-in-out; }
+        .animate-press { animation: press-move 1.5s infinite ease-in-out; }
+        .animate-pullover { animation: pullover-swing 2s infinite ease-in-out; transform-origin: 80px 48px; }
+        .animate-fly { animation: fly-move 1.5s infinite ease-in-out; }
+        .animate-skull { animation: skull-crush 1.5s infinite ease-in-out; transform-origin: 80px 35px; }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 font-sans pb-10">
+
+    <header class="bg-pink-600 py-6 px-4 text-center shadow-lg">
+        <h1 class="text-2xl font-bold">🧱 厚切壯熊：側面加厚計畫</h1>
+        <p class="text-pink-100 text-sm mt-1">細節決定你的厚度，這版修正了手臂位置！</p>
+    </header>
+
+    <main class="max-w-md mx-auto px-4 mt-6 space-y-8">
+
+        <!-- 動作 1 -->
+        <div class="bg-gray-800 rounded-2xl p-5 shadow-xl border border-gray-700">
+            <div class="flex justify-between items-start mb-2">
+                <h2 class="text-xl font-bold text-blue-400 font-mono">01 單臂啞鈴划船</h2>
+                <span class="text-xs font-bold text-yellow-500">17.5-22.5kg</span>
+            </div>
+            
+            <div class="bg-gray-700 rounded-lg h-32 flex items-center justify-center mb-4 overflow-hidden">
+                <svg width="120" height="80" viewBox="0 0 120 80">
+                    <line x1="20" y1="65" x2="100" y2="65" stroke="#4b5563" stroke-width="4"/>
+                    <rect x="40" y="35" width="50" height="15" fill="#ffffff" rx="2"/>
+                    <circle cx="95" cy="40" r="8" fill="#f472b6"/>
+                    <g class="animate-row">
+                        <rect x="65" y="45" width="8" height="20" fill="#3b82f6" rx="2"/>
+                        <circle cx="69" cy="70" r="6" fill="#22c55e"/>
+                    </g>
+                </svg>
+            </div>
+
+            <div class="space-y-3 text-sm">
+                <p><span class="text-blue-400 font-bold">● 預備：</span>單手撐在椅上，背部保持平坦，另一手自然垂下握住啞鈴。</p>
+                <p><span class="text-blue-400 font-bold">● 發力：</span>手肘往「後上方」拉，目標是把啞鈴拉向你的胯下/口袋位置。</p>
+                <p><span class="text-blue-400 font-bold">● 關鍵：</span>身體不要旋轉，想像用手肘去頂天花板，頂端時夾緊單側背肌 1 秒。</p>
+            </div>
+
+            <div class="grid grid-cols-4 gap-2 mt-4">
+                <input type="checkbox" id="ex1-1" class="hidden check-btn"><label for="ex1-1" class="bg-gray-700 py-2 rounded text-center text-xs cursor-pointer">S1</label>
+                <input type="checkbox" id="ex1-2" class="hidden check-btn"><label for="ex1-2" class="bg-gray-700 py-2 rounded text-center text-xs cursor-pointer">S2</label>
+                <input type="checkbox" id="ex1-3" class="hidden check-btn"><label for="ex1-3" class="bg-gray-700 py-2 rounded text-center text-xs cursor-pointer">S3</label>
+                <input type="checkbox" id="ex1-4" class="hidden check-btn"><label for="ex1-4" class="bg-gray-700 py-2 rounded text-center text-xs cursor-pointer">S4</label>
+            </div>
+        </div>
+
+        <!-- 動作 2 -->
+        <div class="bg-gray-800 rounded-2xl p-5 shadow-xl border border-gray-700">
+            <div class="flex justify-between items-start mb-2">
+                <h2 class="text-xl font-bold text-blue-400 font-mono">02 上斜啞鈴胸推</h2>
+                <span class="text-xs font-bold text-yellow-500">12.5-20kg</span>
+            </div>
+            
+            <div class="bg-gray-700 rounded-lg h-32 flex items-center justify-center mb-4">
+                <svg width="120" height="80" viewBox="0 0 120 80">
+                    <line x1="30" y1="65" x2="90" y2="25" stroke="#4b5563" stroke-width="4"/>
+                    <rect x="45" y="35" width="40" height="12" fill="#ffffff" rx="2" transform="rotate(-30 65 41)"/>
+                    <circle cx="85" cy="25" r="8" fill="#f472b6"/>
+                    <g class="animate-press">
+                        <rect x="55" y="30" width="8" height="18" fill="#3b82f6" rx="2" transform="rotate(20 59 39)"/>
+                        <circle cx="59" cy="25" r="6" fill="#22c55e"/>
+                    </g>
+                </svg>
+            </div>
+
+            <div class="space-y-3 text-sm">
+                <p><span class="text-blue-400 font-bold">● 預備：</span>調整椅背為 30-45 度。雙手握鈴放在肩側，挺胸，肩胛骨往後收緊。</p>
+                <p><span class="text-blue-400 font-bold">● 發力：</span>沿著斜上方推起，兩顆啞鈴在最高點靠近，但不要互撞。</p>
+                <p><span class="text-blue-400 font-bold">● 關鍵：</span>手肘下放時不要低於肩膀太多，以免傷肩。專注在「鎖骨下方」的肌肉伸展感。</p>
+            </div>
+
+            <div class="grid grid-cols-4 gap-2 mt-4">
+                <input type="checkbox" id="ex2-1" class="hidden check-btn"><label for="ex2-1" class="bg-gray-700 py-2 rounded text-center text-xs cursor-pointer">S1</label>
+                <input type="checkbox" id="ex2-2" class="hidden check-btn"><label for="ex2-2" class="bg-gray-700 py-2 rounded text-center text-xs cursor-pointer">S2</label>
+                <input type="checkbox" id="ex2-3" class="hidden check-btn"><label for="ex2-3" class="bg-gray-700 py-2 rounded text-center text-xs cursor-pointer">S3</label>
+                <input type="checkbox" id="ex2-4" class="hidden check-btn"><label for="ex2-4" class="bg-gray-700 py-2 rounded text-center text-xs cursor-pointer">S4</label>
+            </div>
+        </div>
+
+        <!-- 動作 3 -->
+        <div class="bg-gray-800 rounded-2xl p-5 shadow-xl border border-gray-700">
+            <div class="flex justify-between items-start mb-2">
+                <h2 class="text-xl font-bold text-blue-400 font-mono">03 啞鈴仰臥拉舉</h2>
+                <span class="text-xs font-bold text-yellow-500">10-15kg</span>
+            </div>
+            
+            <div class="bg-gray-700 rounded-lg h-32 flex items-center justify-center mb-4 overflow-visible">
+                <svg width="120" height="80" viewBox="0 0 120 80">
+                    <line x1="20" y1="55" x2="100" y2="55" stroke="#4b5563" stroke-width="4"/>
+                    <rect x="40" y="45" width="50" height="12" fill="#ffffff" rx="2"/>
+                    <circle cx="95" cy="50" r="8" fill="#f472b6"/>
+                    <g class="animate-pullover">
+                        <rect x="76" y="15" width="8" height="35" fill="#3b82f6" rx="2"/> 
+                        <circle cx="80" cy="12" r="7" fill="#22c55e"/>
+                    </g>
+                </svg>
+            </div>
+
+            <div class="space-y-3 text-sm">
+                <p><span class="text-blue-400 font-bold">● 預備：</span>仰臥在長凳，雙手握住一顆啞鈴的一端，放在胸口上方，手臂微彎。</p>
+                <p><span class="text-blue-400 font-bold">● 發力：</span>保持手臂角度「不動」，將啞鈴畫圓往頭後方下降，直到與身體平行。</p>
+                <p><span class="text-blue-400 font-bold">● 關鍵：</span>下放時深深吸氣，感覺胸腔像被撐開一樣。這招是讓側面變厚的黃金動作。</p>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2 mt-4">
+                <input type="checkbox" id="ex3-1" class="hidden check-btn"><label for="ex3-1" class="bg-gray-700 py-2 rounded text-center text-xs cursor-pointer">S1</label>
+                <input type="checkbox" id="ex3-2" class="hidden check-btn"><label for="ex3-2" class="bg-gray-700 py-2 rounded text-center text-xs cursor-pointer">S2</label>
+                <input type="checkbox" id="ex3-3" class="hidden check-btn"><label for="ex3-3" class="bg-gray-700 py-2 rounded text-center text-xs cursor-pointer">S3</label>
+            </div>
+        </div>
+
+        <!-- 動作 4 -->
+        <div class="bg-gray-800 rounded-2xl p-5 shadow-xl border border-gray-700">
+            <div class="flex justify-between items-start mb-2">
+                <h2 class="text-xl font-bold text-blue-400 font-mono">04 俯身後三角飛鳥</h2>
+                <span class="text-xs font-bold text-yellow-500">5-7.5kg</span>
+            </div>
+            
+            <div class="bg-gray-700 rounded-lg h-32 flex items-center justify-center mb-4">
+                <svg width="120" height="80" viewBox="0 0 120 80">
+                    <rect x="55" y="30" width="12" height="40" fill="#ffffff" rx="2"/>
+                    <circle cx="61" cy="20" r="8" fill="#f472b6"/>
+                    <g class="animate-fly">
+                        <rect x="40" y="40" width="42" height="6" fill="#3b82f6" rx="2"/>
+                        <circle cx="38" cy="43" r="4" fill="#22c55e"/>
+                        <circle cx="84" cy="43" r="4" fill="#22c55e"/>
+                    </g>
+                </svg>
+            </div>
+
+            <div class="space-y-3 text-sm">
+                <p><span class="text-blue-400 font-bold">● 預備：</span>上半身前傾到與地板平行，雙膝微彎。啞鈴垂在胸下。</p>
+                <p><span class="text-blue-400 font-bold">● 發力：</span>手肘微彎，像鳥拍翅膀一樣往「兩側」推開，而非往後拉。</p>
+                <p><span class="text-blue-400 font-bold">● 關鍵：</span>不要聳肩！想像把啞鈴推向兩面牆，感受肩膀後側那個小肌肉的燒灼感。</p>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2 mt-4">
+                <input type="checkbox" id="ex4-1" class="hidden check-btn"><label for="ex4-1" class="bg-gray-700 py-2 rounded text-center text-xs cursor-pointer">S1</label>
+                <input type="checkbox" id="ex4-2" class="hidden check-btn"><label for="ex4-2" class="bg-gray-700 py-2 rounded text-center text-xs cursor-pointer">S2</label>
+                <input type="checkbox" id="ex4-3" class="hidden check-btn"><label for="ex4-3" class="bg-gray-700 py-2 rounded text-center text-xs cursor-pointer">S3</label>
+            </div>
+        </div>
+
+        <!-- 動作 5 -->
+        <div class="bg-gray-800 rounded-2xl p-5 shadow-xl border border-gray-700">
+            <div class="flex justify-between items-start mb-2">
+                <h2 class="text-xl font-bold text-blue-400 font-mono">05 躺姿法式推舉</h2>
+                <span class="text-xs font-bold text-yellow-500">7.5-12.5kg</span>
+            </div>
+            
+            <div class="bg-gray-700 rounded-lg h-32 flex items-center justify-center mb-4">
+                <svg width="120" height="80" viewBox="0 0 120 80">
+                    <line x1="20" y1="65" x2="100" y2="65" stroke="#4b5563" stroke-width="4"/>
+                    <rect x="40" y="55" width="50" height="12" fill="#ffffff" rx="2"/>
+                    <circle cx="95" cy="58" r="8" fill="#f472b6"/>
+                    <rect x="76" y="35" width="8" height="22" fill="#3b82f6" rx="2" opacity="0.4"/>
+                    <g class="animate-skull">
+                        <rect x="76" y="10" width="8" height="25" fill="#3b82f6" rx="2"/> 
+                        <circle cx="80" cy="7" r="6" fill="#22c55e"/>
+                    </g>
+                    <circle cx="80" cy="35" r="3" fill="#ffffff"/>
+                </svg>
+            </div>
+
+            <div class="space-y-3 text-sm">
+                <p><span class="text-blue-400 font-bold">● 預備：</span>仰臥平躺，雙手握鈴舉在胸前。接著將手肘稍微往頭後方傾斜約 15 度並固定。</p>
+                <p><span class="text-blue-400 font-bold">● 發力：</span>「大臂完全不動」，只動小臂將啞鈴降至額頭上方，再推回原位。</p>
+                <p><span class="text-blue-400 font-bold">● 關鍵：</span>手肘不要往外開，要往內夾。這是增加手臂側面「厚度」的必修課。</p>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2 mt-4">
+                <input type="checkbox" id="ex5-1" class="hidden check-btn"><label for="ex5-1" class="bg-gray-700 py-2 rounded text-center text-xs cursor-pointer">S1</label>
+                <input type="checkbox" id="ex5-2" class="hidden check-btn"><label for="ex5-2" class="bg-gray-700 py-2 rounded text-center text-xs cursor-pointer">S2</label>
+                <input type="checkbox" id="ex5-3" class="hidden check-btn"><label for="ex5-3" class="bg-gray-700 py-2 rounded text-center text-xs cursor-pointer">S3</label>
+            </div>
+        </div>
+
+        <footer class="text-center py-10">
+            <button onclick="window.location.reload()" class="bg-pink-600 hover:bg-pink-700 text-white px-8 py-3 rounded-full text-sm font-bold shadow-lg">
+                🔄 重置今日特訓
+            </button>
+            <p class="text-gray-500 text-xs mt-6">加油！這身肌肉練出來，側面看就是一堵牆！</p>
+        </footer>
+
+    </main>
+
+</body>
+</html>
