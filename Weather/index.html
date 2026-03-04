@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>善化即時天氣儀表板</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-white min-h-screen flex items-center justify-center">
+
+    <div class="bg-slate-800 p-8 rounded-2xl shadow-2xl border border-slate-700 w-full max-w-md">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-blue-400">善化即時天氣</h1>
+            <span id="update-time" class="text-xs text-slate-400">更新中...</span>
+        </div>
+
+        <div class="flex items-center justify-between">
+            <div>
+                <div id="temp" class="text-6xl font-extrabold tracking-tighter">--°C</div>
+                <div id="weather" class="text-lg text-slate-300 mt-2">讀取中...</div>
+            </div>
+            <div class="text-5xl text-yellow-400">☀️</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 mt-8 border-t border-slate-700 pt-6 text-sm">
+            <div class="flex flex-col">
+                <span class="text-slate-500 uppercase tracking-wider">相對濕度</span>
+                <span id="humidity" class="font-semibold text-lg">-- %</span>
+            </div>
+            <div class="flex flex-col">
+                <span class="text-slate-500 uppercase tracking-wider">風速</span>
+                <span id="wind-speed" class="font-semibold text-lg">-- m/s</span>
+            </div>
+        </div>
+        
+        <button onclick="fetchWeather()" class="w-full mt-6 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg font-medium transition-colors">
+            立即重新整理
+        </button>
+    </div>
+
+    <script>
+        // ⚠️ 請在此處替換你的 API Key
+        const API_KEY = 'CWA-47959DBE-C1BD-4EF1-B98D-3734272A4872';
+        const STATION_NAME = '善化'; 
+        const API_URL = `https://opendata.cwa.gov.tw/api/v1/rest/datastore/O-A0003-001?Authorization=${API_KEY}&StationName=${encodeURIComponent(STATION_NAME)}`;
+
+        async function fetchWeather() {
+            try {
+                const response = await fetch(API_URL);
+                const data = await response.json();
+                
+                // 氣象署回傳的結構：records -> Station -> 0
+                const stationData = data.records.Station[0];
+                const obs = stationData.WeatherElement;
+
+                document.getElementById('temp').innerText = `${obs.AirTemperature}°C`;
+                document.getElementById('weather').innerText = stationData.Weather || '天氣晴朗';
+                document.getElementById('humidity').innerText = `${obs.RelativeHumidity}%`;
+                document.getElementById('wind-speed').innerText = `${obs.WindSpeed} m/s`;
+                document.getElementById('update-time').innerText = `更新時間：${stationData.ObsTime.DateTime.split('T')[1].substring(0, 5)}`;
+                
+            } catch (error) {
+                console.error('抓取失敗:', error);
+                alert('抓取失敗，請檢查 API Key 是否正確或是否有 CORS 限制。');
+            }
+        }
+
+        // 頁面加載後執行一次
+        fetchWeather();
+    </script>
+</body>
+</html>
