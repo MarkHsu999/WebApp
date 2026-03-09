@@ -130,7 +130,7 @@
                     </div>
                 </div>
 
-                <div class="mt-10 p-5 bg-slate-800 text-slate-100 rounded-2xl shadow-inner">
+                <div class="mt-8 p-5 bg-slate-800 text-slate-100 rounded-2xl shadow-inner">
                     <h3 class="font-bold text-amber-400 mb-2 flex items-center">
                         <span class="mr-2">💬</span> 毒舌點評
                     </h3>
@@ -139,12 +139,23 @@
                     </p>
                 </div>
                 
-                <button onclick="location.reload()" class="w-full mt-6 py-3 bg-slate-100 text-slate-500 font-bold rounded-xl hover:bg-slate-200 transition active:scale-95">
-                    重測一次
-                </button>
+                <div class="mt-6 space-y-3">
+                    <button id="download-btn" onclick="saveResult()" class="w-full py-4 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition transform active:scale-95 shadow-lg flex items-center justify-center hidden">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        下載分析報告圖
+                    </button>
+                    <button onclick="location.reload()" class="w-full py-3 bg-slate-100 text-slate-500 font-bold rounded-xl hover:bg-slate-200 transition active:scale-95 text-sm">
+                        重測一次
+                    </button>
+                </div>
             </div>
         </div>
     </div>
+
+    <!-- 隱藏的 Canvas 用於生成圖片 -->
+    <canvas id="export-canvas" class="hidden"></canvas>
 
     <script>
         const fileInput = document.getElementById('file-input');
@@ -153,6 +164,7 @@
         const previewImg = document.getElementById('preview-img');
         const imageContainer = document.getElementById('image-container');
         const dropZone = document.getElementById('drop-zone');
+        const downloadBtn = document.getElementById('download-btn');
 
         const lines = [
             document.getElementById('line-1'),
@@ -163,6 +175,7 @@
 
         let activeLine = null;
         let containerRect = null;
+        let currentRatios = { f1: "--", f2: "--", f3: "--" };
 
         fileInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
@@ -184,7 +197,7 @@
                 previewImg.src = e.target.result;
                 uploadPrompt.classList.add('hidden');
                 imageWorkspace.classList.remove('hidden');
-                // 初始位置設置
+                downloadBtn.classList.remove('hidden');
                 lines[0].style.top = '15%';
                 lines[1].style.top = '35%';
                 lines[2].style.top = '60%';
@@ -201,9 +214,6 @@
                 line.classList.add('line-active');
                 containerRect = imageContainer.getBoundingClientRect();
                 
-                const moveEvent = e.type === 'touchstart' ? 'touchmove' : 'mousemove';
-                const upEvent = e.type === 'touchstart' ? 'touchend' : 'mouseup';
-
                 const onMove = (me) => {
                     const clientY = me.type === 'touchmove' ? me.touches[0].clientY : me.clientY;
                     let relativeY = clientY - containerRect.top;
@@ -234,41 +244,31 @@
 
         function updateCalculations() {
             const pos = lines.map(l => parseFloat(l.style.top));
-            
-            const h1 = pos[1] - pos[0]; // 上庭
-            const h2 = pos[2] - pos[1]; // 中庭
-            const h3 = pos[3] - pos[2]; // 下庭
+            const h1 = pos[1] - pos[0];
+            const h2 = pos[2] - pos[1];
+            const h3 = pos[3] - pos[2];
 
             if (h1 > 0 && h2 > 0 && h3 > 0) {
-                // 以第一個 (上庭) 為基準 1，或是以最小的為基準？
-                // 通常 1:1:1 是指相對值，我們以「上庭」作為 1 的基準點來顯示
                 const r1 = 1;
                 const r2 = h2 / h1;
                 const r3 = h3 / h1;
-
                 updateUI(r1, r2, r3, h1, h2, h3);
-            } else {
-                if (pos.some((v, i) => i > 0 && v < pos[i-1])) {
-                    document.getElementById('commentary').innerText = "線條順序錯了啦！你的鼻孔長在額頭上嗎？請重新對齊。";
-                }
             }
         }
 
         function updateUI(r1, r2, r3, h1, h2, h3) {
-            // 格式化顯示
             const f1 = r1.toFixed(2);
             const f2 = r2.toFixed(2);
             const f3 = r3.toFixed(2);
+            currentRatios = { f1, f2, f3 };
 
             document.getElementById('ratio-summary').innerText = `${f1} : ${f2} : ${f3}`;
-            
             document.getElementById('ratio-1-val').innerText = f1;
             document.getElementById('ratio-2-val').innerText = f2;
             document.getElementById('ratio-3-val').innerText = f3;
 
-            // 進度條顯示百分比 (視覺化用)
             const total = h1 + h2 + h3;
-            document.getElementById('ratio-1-bar').style.width = (h1/total*100) * 3 + '%'; // 放大顯示差異
+            document.getElementById('ratio-1-bar').style.width = (h1/total*100) * 3 + '%';
             document.getElementById('ratio-2-bar').style.width = (h2/total*100) * 3 + '%';
             document.getElementById('ratio-3-bar').style.width = (h3/total*100) * 3 + '%';
 
@@ -277,8 +277,6 @@
 
         function generateCommentary(r2, r3) {
             const commentEl = document.getElementById('commentary');
-            
-            // 判斷偏差值 (相對於 1)
             const d2 = Math.abs(r2 - 1);
             const d3 = Math.abs(r3 - 1);
             const totalDiff = d2 + d3;
@@ -295,6 +293,84 @@
                 commentEl.innerText = "下巴精緻小巧，拍照一定很上鏡，但記得要把線條對準，別把下巴弄沒了。";
             } else {
                 commentEl.innerText = "比例相當協調！雖然有些微差距，但這正是你獨特的魅力所在，這臉我給過。";
+            }
+        }
+
+        function saveResult() {
+            const canvas = document.getElementById('export-canvas');
+            const ctx = canvas.getContext('2d');
+            const img = document.getElementById('preview-img');
+
+            const footerHeight = Math.max(160, img.naturalWidth / 5);
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight + footerHeight;
+
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight);
+
+            // 繪製線條與自適應字體標籤
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.lineWidth = Math.max(2, img.naturalWidth / 200);
+            ctx.setLineDash([15, 8]);
+
+            const pos = lines.map(l => parseFloat(l.style.top) / 100 * img.naturalHeight);
+            const labels = ["髮際線", "眉心", "鼻底", "下巴尖"];
+
+            pos.forEach((y, i) => {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(img.naturalWidth, y);
+                ctx.stroke();
+
+                ctx.fillStyle = 'rgba(0,0,0,0.7)';
+                // 防止標籤字體過大超出寬度
+                let labelFontSize = Math.max(16, img.naturalWidth / 25);
+                ctx.font = `bold ${labelFontSize}px Sans-serif`;
+                while(ctx.measureText(labels[i]).width > img.naturalWidth * 0.2 && labelFontSize > 12) {
+                    labelFontSize -= 2;
+                    ctx.font = `bold ${labelFontSize}px Sans-serif`;
+                }
+                ctx.fillText(labels[i], 15, y - 10);
+            });
+
+            // 底部數據區：自適應縮小邏輯
+            const footerY = img.naturalHeight;
+            ctx.setLineDash([]); 
+            ctx.textAlign = 'center';
+            
+            const mainText = `黃金比例：${currentRatios.f1} : ${currentRatios.f2} : ${currentRatios.f3}`;
+            let mainFontSize = Math.max(28, img.naturalWidth / 15);
+            const maxWidth = img.naturalWidth * 0.9; // 留 10% 邊距
+            
+            ctx.font = `900 ${mainFontSize}px Sans-serif`;
+            // 如果寬度不夠，就縮小字體
+            while (ctx.measureText(mainText).width > maxWidth && mainFontSize > 14) {
+                mainFontSize -= 2;
+                ctx.font = `900 ${mainFontSize}px Sans-serif`;
+            }
+
+            ctx.fillStyle = '#4f46e5';
+            ctx.fillText(mainText, canvas.width / 2, footerY + (footerHeight * 0.45));
+            
+            const subText = "三庭比例分析儀 | 你的專屬美學報告";
+            let subFontSize = Math.max(12, img.naturalWidth / 45);
+            ctx.font = `${subFontSize}px Sans-serif`;
+            while (ctx.measureText(subText).width > maxWidth && subFontSize > 10) {
+                subFontSize -= 1;
+                ctx.font = `${subFontSize}px Sans-serif`;
+            }
+
+            ctx.fillStyle = '#94a3b8';
+            ctx.fillText(subText, canvas.width / 2, footerY + (footerHeight * 0.8));
+
+            try {
+                const link = document.createElement('a');
+                link.download = `face-ratio-${Date.now()}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            } catch (err) {
+                alert("圖片導出失敗，請確認圖片來源。");
             }
         }
     </script>
