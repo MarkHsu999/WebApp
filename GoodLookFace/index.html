@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>三庭比例分析儀 - 你的臉合格嗎？</title>
+    <title>優熊比例鑑定儀</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .line-handle {
@@ -24,31 +24,31 @@
         }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen text-slate-800 font-sans">
+<body class="bg-stone-50 min-h-screen text-stone-800 font-sans">
 
     <div class="max-w-6xl mx-auto px-4 py-8">
         <header class="text-center mb-8">
-            <h1 class="text-4xl font-black text-slate-900 mb-2">三庭比例分析儀 📏</h1>
-            <p class="text-slate-500 italic">追求 $1:1:1$ 的極致美學，動動手指揭開真相。</p>
+            <h1 class="text-4xl font-black text-stone-900 mb-2">優熊比例鑑定儀 🐻</h1>
+            <p class="text-stone-500 italic">你是天菜天選之熊，還是需要靠鬍子補救的熊？</p>
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
             
             <!-- 左側：圖片編輯區 -->
             <div class="lg:col-span-2 space-y-4">
-                <div id="drop-zone" class="relative bg-white border-4 border-dashed border-slate-200 rounded-3xl p-4 min-h-[550px] flex flex-col items-center justify-center overflow-hidden custom-shadow transition-all">
+                <div id="drop-zone" class="relative bg-white border-4 border-dashed border-stone-200 rounded-3xl p-4 min-h-[550px] flex flex-col items-center justify-center overflow-hidden custom-shadow transition-all">
                     
                     <input type="file" id="file-input" class="hidden" accept="image/*">
                     
                     <div id="upload-prompt" class="text-center">
-                        <div class="bg-indigo-100 text-indigo-600 p-6 rounded-full inline-block mb-4">
+                        <div class="bg-amber-100 text-amber-700 p-6 rounded-full inline-block mb-4">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
                         </div>
-                        <h3 class="text-xl font-bold mb-2">點擊或拖入正臉照</h3>
-                        <p class="text-slate-400 text-sm px-4">請對準鏡頭，撥開瀏海，展示你那寫滿命運的額頭</p>
-                        <button onclick="document.getElementById('file-input').click()" class="mt-6 px-8 py-3 bg-indigo-600 text-white font-bold rounded-full hover:bg-indigo-700 transition transform hover:scale-105 active:scale-95">
+                        <h3 class="text-xl font-bold mb-2">交出你的正臉照</h3>
+                        <p class="text-stone-400 text-sm px-4">請撥開瀏海，展示你那寫滿命運（或是鬍渣）的臉龐</p>
+                        <button onclick="document.getElementById('file-input').click()" class="mt-6 px-8 py-3 bg-amber-800 text-white font-bold rounded-full hover:bg-amber-900 transition transform hover:scale-105 active:scale-95">
                             選擇照片
                         </button>
                     </div>
@@ -73,24 +73,17 @@
                         </div>
                     </div>
                 </div>
-                <div class="flex items-center justify-center space-x-2 text-slate-400">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <p class="text-xs italic">提示：按住線條上下移動，精準定位你的「三庭」區間。</p>
-                </div>
             </div>
 
             <!-- 右側：數據統計區 -->
-            <div class="bg-white rounded-3xl p-8 custom-shadow border border-slate-100 flex flex-col h-full">
-                <h2 class="text-2xl font-bold mb-6 flex items-center text-slate-900">
-                    <span class="mr-2">📏</span> 黃金比例分析
+            <div class="bg-white rounded-3xl p-8 custom-shadow border border-stone-100 flex flex-col h-full">
+                <h2 class="text-2xl font-bold mb-6 flex items-center text-stone-900">
+                    <span class="mr-2">🔎</span> 優熊屬性鑑定
                 </h2>
                 
-                <!-- 綜合比例大看板 -->
-                <div class="mb-10 text-center p-6 bg-indigo-50 rounded-2xl border border-indigo-100">
-                    <p class="text-xs text-indigo-400 font-bold tracking-widest uppercase mb-1">您的當前比例</p>
-                    <div id="ratio-summary" class="text-3xl font-black text-indigo-700 tracking-tighter">
+                <div class="mb-10 text-center p-6 bg-amber-50 rounded-2xl border border-amber-100">
+                    <p class="text-xs text-amber-600 font-bold tracking-widest uppercase mb-1">您的三庭比例</p>
+                    <div id="ratio-summary" class="text-3xl font-black text-amber-900 tracking-tighter">
                         -- : -- : --
                     </div>
                 </div>
@@ -99,54 +92,54 @@
                     <!-- 上庭 -->
                     <div>
                         <div class="flex justify-between items-end mb-2">
-                            <span class="font-bold text-slate-600">上庭 (Forehead)</span>
-                            <span id="ratio-1-val" class="text-xl font-black text-blue-600">--</span>
+                            <span class="font-bold text-stone-600">上庭 (智慧)</span>
+                            <span id="ratio-1-val" class="text-xl font-black text-amber-700">--</span>
                         </div>
-                        <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                            <div id="ratio-1-bar" class="bg-blue-500 h-full transition-all duration-300" style="width: 0%"></div>
+                        <div class="w-full bg-stone-100 h-2 rounded-full overflow-hidden">
+                            <div id="ratio-1-bar" class="bg-amber-600 h-full transition-all duration-300" style="width: 0%"></div>
                         </div>
                     </div>
 
                     <!-- 中庭 -->
                     <div>
                         <div class="flex justify-between items-end mb-2">
-                            <span class="font-bold text-slate-600">中庭 (Middle)</span>
-                            <span id="ratio-2-val" class="text-xl font-black text-emerald-600">--</span>
+                            <span class="font-bold text-stone-600">中庭 (英氣)</span>
+                            <span id="ratio-2-val" class="text-xl font-black text-stone-700">--</span>
                         </div>
-                        <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                            <div id="ratio-2-bar" class="bg-emerald-500 h-full transition-all duration-300" style="width: 0%"></div>
+                        <div class="w-full bg-stone-100 h-2 rounded-full overflow-hidden">
+                            <div id="ratio-2-bar" class="bg-stone-600 h-full transition-all duration-300" style="width: 0%"></div>
                         </div>
                     </div>
 
                     <!-- 下庭 -->
                     <div>
                         <div class="flex justify-between items-end mb-2">
-                            <span class="font-bold text-slate-600">下庭 (Lower)</span>
-                            <span id="ratio-3-val" class="text-xl font-black text-rose-600">--</span>
+                            <span class="font-bold text-stone-600">下庭 (穩重)</span>
+                            <span id="ratio-3-val" class="text-xl font-black text-orange-700">--</span>
                         </div>
-                        <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                            <div id="ratio-3-bar" class="bg-rose-500 h-full transition-all duration-300" style="width: 0%"></div>
+                        <div class="w-full bg-stone-100 h-2 rounded-full overflow-hidden">
+                            <div id="ratio-3-bar" class="bg-orange-600 h-full transition-all duration-300" style="width: 0%"></div>
                         </div>
                     </div>
                 </div>
 
-                <div class="mt-8 p-5 bg-slate-800 text-slate-100 rounded-2xl shadow-inner">
+                <div class="mt-8 p-5 bg-stone-900 text-stone-100 rounded-2xl shadow-inner">
                     <h3 class="font-bold text-amber-400 mb-2 flex items-center">
-                        <span class="mr-2">💬</span> 毒舌點評
+                        <span class="mr-2">📢</span> 鑑定結果
                     </h3>
-                    <p id="commentary" class="text-sm leading-relaxed text-slate-300 min-h-[3rem]">
-                        尚未檢測到五官。請先上傳照片並對準線條。
+                    <p id="commentary" class="text-sm leading-relaxed text-stone-300 min-h-[3rem]">
+                        請上傳照片，讓本機器人鑑定一下你的熊味。
                     </p>
                 </div>
                 
                 <div class="mt-6 space-y-3">
-                    <button id="download-btn" onclick="saveResult()" class="w-full py-4 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition transform active:scale-95 shadow-lg flex items-center justify-center hidden">
+                    <button id="download-btn" onclick="saveResult()" class="w-full py-4 bg-amber-800 text-white font-bold rounded-xl hover:bg-amber-900 transition transform active:scale-95 shadow-lg flex items-center justify-center hidden">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                         </svg>
-                        下載分析報告圖
+                        儲存鑑定圖
                     </button>
-                    <button onclick="location.reload()" class="w-full py-3 bg-slate-100 text-slate-500 font-bold rounded-xl hover:bg-slate-200 transition active:scale-95 text-sm">
+                    <button onclick="location.reload()" class="w-full py-3 bg-stone-100 text-stone-500 font-bold rounded-xl hover:bg-stone-200 transition active:scale-95 text-sm">
                         重測一次
                     </button>
                 </div>
@@ -154,7 +147,6 @@
         </div>
     </div>
 
-    <!-- 隱藏的 Canvas 用於生成圖片 -->
     <canvas id="export-canvas" class="hidden"></canvas>
 
     <script>
@@ -182,11 +174,11 @@
             if (file) handleFile(file);
         });
 
-        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('bg-indigo-50', 'border-indigo-300'); });
-        dropZone.addEventListener('dragleave', () => { dropZone.classList.remove('bg-indigo-50', 'border-indigo-300'); });
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('bg-amber-50', 'border-amber-300'); });
+        dropZone.addEventListener('dragleave', () => { dropZone.classList.remove('bg-amber-50', 'border-amber-300'); });
         dropZone.addEventListener('drop', (e) => {
             e.preventDefault();
-            dropZone.classList.remove('bg-indigo-50', 'border-indigo-300');
+            dropZone.classList.remove('bg-amber-50', 'border-amber-300');
             const file = e.dataTransfer.files[0];
             if (file && file.type.startsWith('image/')) handleFile(file);
         });
@@ -282,26 +274,51 @@
             const totalDiff = d2 + d3;
 
             if (totalDiff < 0.05) {
-                commentEl.innerText = "這比例...你是從畫裡走出來的吧？完美 1:1:1，連整型醫師都要失業了。";
+                commentEl.innerText = "這比例...你是優熊界的天菜吧？1:1:1 的完美比例，不管是粗曠風還是型男風都能完美駕馭！";
             } else if (r2 > 1.2) {
-                commentEl.innerText = "中庭特別突出呢！看來是個氣場強大的成熟派，或是你的鼻子真的非常有存在感。";
+                commentEl.innerText = "中庭偏長，這可是標準的「熟男熊」比例！看起來英氣逼人，很有成熟可靠的大叔感。";
             } else if (r3 > 1.2) {
-                commentEl.innerText = "下庭比例較高，這就是所謂的『晚年運極佳』吧？下巴有肉，衣食無憂！";
+                commentEl.innerText = "下庭有力，這是穩重「霸氣熊」的象徵。如果你有留鬍子，那威懾力簡直爆表！";
             } else if (r2 < 0.8) {
-                commentEl.innerText = "中庭偏短，這比例看起來非常有幼態感，恭喜你獲得了永遠的「童顏」護身符。";
+                commentEl.innerText = "中庭偏短，是個可愛的「奶熊」呢！這種幼態比例最容易激發別人的保護欲了。";
             } else if (r3 < 0.8) {
-                commentEl.innerText = "下巴精緻小巧，拍照一定很上鏡，但記得要把線條對準，別把下巴弄沒了。";
+                commentEl.innerText = "下巴精緻，屬於「型男熊」路線。記得要把鬍渣修乾淨，走一個俐落帥氣的風格。";
             } else {
-                commentEl.innerText = "比例相當協調！雖然有些微差距，但這正是你獨特的魅力所在，這臉我給過。";
+                commentEl.innerText = "這比例很標準！很有「鄰家優熊」的親和力，是那種走在路上回頭率會很高的類型喔。";
             }
+        }
+
+        function wrapText(context, text, x, y, maxWidth, lineHeight) {
+            const words = text.split(""); // 針對中文，逐字拆分
+            let line = "";
+            let testLine = "";
+            let lineCount = 0;
+
+            for (let n = 0; n < words.length; n++) {
+                testLine = line + words[n];
+                const metrics = context.measureText(testLine);
+                const testWidth = metrics.width;
+                if (testWidth > maxWidth && n > 0) {
+                    context.fillText(line, x, y);
+                    line = words[n];
+                    y += lineHeight;
+                    lineCount++;
+                } else {
+                    line = testLine;
+                }
+            }
+            context.fillText(line, x, y);
+            return lineCount + 1;
         }
 
         function saveResult() {
             const canvas = document.getElementById('export-canvas');
             const ctx = canvas.getContext('2d');
             const img = document.getElementById('preview-img');
+            const comment = document.getElementById('commentary').innerText;
 
-            const footerHeight = Math.max(160, img.naturalWidth / 5);
+            // 預留更多底部空間來放鑑定結果
+            const footerHeight = Math.max(220, img.naturalWidth / 3);
             canvas.width = img.naturalWidth;
             canvas.height = img.naturalHeight + footerHeight;
 
@@ -309,7 +326,7 @@
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight);
 
-            // 繪製線條與自適應字體標籤
+            // 繪製線條
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
             ctx.lineWidth = Math.max(2, img.naturalWidth / 200);
             ctx.setLineDash([15, 8]);
@@ -324,53 +341,49 @@
                 ctx.stroke();
 
                 ctx.fillStyle = 'rgba(0,0,0,0.7)';
-                // 防止標籤字體過大超出寬度
                 let labelFontSize = Math.max(16, img.naturalWidth / 25);
                 ctx.font = `bold ${labelFontSize}px Sans-serif`;
-                while(ctx.measureText(labels[i]).width > img.naturalWidth * 0.2 && labelFontSize > 12) {
-                    labelFontSize -= 2;
-                    ctx.font = `bold ${labelFontSize}px Sans-serif`;
-                }
                 ctx.fillText(labels[i], 15, y - 10);
             });
 
-            // 底部數據區：自適應縮小邏輯
+            // 底部數據區
             const footerY = img.naturalHeight;
             ctx.setLineDash([]); 
             ctx.textAlign = 'center';
+            const maxWidth = img.naturalWidth * 0.9;
             
-            const mainText = `黃金比例：${currentRatios.f1} : ${currentRatios.f2} : ${currentRatios.f3}`;
+            // 1. 比例標題
+            const mainText = `優熊鑑定比例：${currentRatios.f1} : ${currentRatios.f2} : ${currentRatios.f3}`;
             let mainFontSize = Math.max(28, img.naturalWidth / 15);
-            const maxWidth = img.naturalWidth * 0.9; // 留 10% 邊距
-            
             ctx.font = `900 ${mainFontSize}px Sans-serif`;
-            // 如果寬度不夠，就縮小字體
             while (ctx.measureText(mainText).width > maxWidth && mainFontSize > 14) {
                 mainFontSize -= 2;
                 ctx.font = `900 ${mainFontSize}px Sans-serif`;
             }
-
-            ctx.fillStyle = '#4f46e5';
-            ctx.fillText(mainText, canvas.width / 2, footerY + (footerHeight * 0.45));
+            ctx.fillStyle = '#92400e';
+            ctx.fillText(mainText, canvas.width / 2, footerY + (footerHeight * 0.25));
             
-            const subText = "三庭比例分析儀 | 你的專屬美學報告";
-            let subFontSize = Math.max(12, img.naturalWidth / 45);
-            ctx.font = `${subFontSize}px Sans-serif`;
-            while (ctx.measureText(subText).width > maxWidth && subFontSize > 10) {
-                subFontSize -= 1;
-                ctx.font = `${subFontSize}px Sans-serif`;
-            }
+            // 2. 鑑定評語 (加上自動換行)
+            let commentFontSize = Math.max(16, img.naturalWidth / 35);
+            ctx.font = `italic ${commentFontSize}px Sans-serif`;
+            ctx.fillStyle = '#44403c';
+            const lineHeight = commentFontSize * 1.5;
+            wrapText(ctx, "結果點評：" + comment, canvas.width / 2, footerY + (footerHeight * 0.45), maxWidth, lineHeight);
 
-            ctx.fillStyle = '#94a3b8';
-            ctx.fillText(subText, canvas.width / 2, footerY + (footerHeight * 0.8));
+            // 3. 浮水印
+            const subText = "優熊鑑定儀 | 天菜還是需要鬍子補救？";
+            let subFontSize = Math.max(12, img.naturalWidth / 50);
+            ctx.font = `${subFontSize}px Sans-serif`;
+            ctx.fillStyle = '#a8a29e';
+            ctx.fillText(subText, canvas.width / 2, footerY + (footerHeight * 0.85));
 
             try {
                 const link = document.createElement('a');
-                link.download = `face-ratio-${Date.now()}.png`;
+                link.download = `bear-analysis-${Date.now()}.png`;
                 link.href = canvas.toDataURL('image/png');
                 link.click();
             } catch (err) {
-                alert("圖片導出失敗，請確認圖片來源。");
+                alert("圖片導出失敗。");
             }
         }
     </script>
