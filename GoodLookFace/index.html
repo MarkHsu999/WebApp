@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>三庭比例分析儀 - 你的臉合格嗎？</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .line-handle {
+            transition: background-color 0.2s;
+        }
+        .line-handle:hover {
+            background-color: rgba(255, 255, 255, 0.8) !important;
+        }
+        .line-active {
+            background-color: #fbbf24 !important; /* amber-400 */
+            box-shadow: 0 0 15px rgba(251, 191, 36, 0.9);
+        }
+        #image-container {
+            touch-action: none;
+        }
+        .custom-shadow {
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-800 font-sans">
+
+    <div class="max-w-6xl mx-auto px-4 py-8">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-black text-slate-900 mb-2">三庭比例分析儀 📏</h1>
+            <p class="text-slate-500 italic">追求 $1:1:1$ 的極致美學，動動手指揭開真相。</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+            
+            <!-- 左側：圖片編輯區 -->
+            <div class="lg:col-span-2 space-y-4">
+                <div id="drop-zone" class="relative bg-white border-4 border-dashed border-slate-200 rounded-3xl p-4 min-h-[550px] flex flex-col items-center justify-center overflow-hidden custom-shadow transition-all">
+                    
+                    <input type="file" id="file-input" class="hidden" accept="image/*">
+                    
+                    <div id="upload-prompt" class="text-center">
+                        <div class="bg-indigo-100 text-indigo-600 p-6 rounded-full inline-block mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">點擊或拖入正臉照</h3>
+                        <p class="text-slate-400 text-sm px-4">請對準鏡頭，撥開瀏海，展示你那寫滿命運的額頭</p>
+                        <button onclick="document.getElementById('file-input').click()" class="mt-6 px-8 py-3 bg-indigo-600 text-white font-bold rounded-full hover:bg-indigo-700 transition transform hover:scale-105 active:scale-95">
+                            選擇照片
+                        </button>
+                    </div>
+
+                    <div id="image-workspace" class="hidden relative w-full h-full flex items-center justify-center">
+                        <div id="image-container" class="relative inline-block cursor-crosshair">
+                            <img id="preview-img" class="max-w-full max-h-[75vh] rounded-lg select-none pointer-events-none shadow-xl">
+                            
+                            <!-- 拖曳線 -->
+                            <div id="line-1" class="line-handle absolute left-0 right-0 h-1 bg-white/60 cursor-ns-resize z-10 flex items-center justify-end" style="top: 20%;">
+                                <span class="bg-black/60 text-white text-[11px] px-2 py-1 rounded-l-md pointer-events-none font-bold">髮際線</span>
+                            </div>
+                            <div id="line-2" class="line-handle absolute left-0 right-0 h-1 bg-white/60 cursor-ns-resize z-10 flex items-center justify-end" style="top: 40%;">
+                                <span class="bg-black/60 text-white text-[11px] px-2 py-1 rounded-l-md pointer-events-none font-bold">眉心</span>
+                            </div>
+                            <div id="line-3" class="line-handle absolute left-0 right-0 h-1 bg-white/60 cursor-ns-resize z-10 flex items-center justify-end" style="top: 60%;">
+                                <span class="bg-black/60 text-white text-[11px] px-2 py-1 rounded-l-md pointer-events-none font-bold">鼻底</span>
+                            </div>
+                            <div id="line-4" class="line-handle absolute left-0 right-0 h-1 bg-white/60 cursor-ns-resize z-10 flex items-center justify-end" style="top: 80%;">
+                                <span class="bg-black/60 text-white text-[11px] px-2 py-1 rounded-l-md pointer-events-none font-bold">下巴尖</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center justify-center space-x-2 text-slate-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p class="text-xs italic">提示：按住線條上下移動，精準定位你的「三庭」區間。</p>
+                </div>
+            </div>
+
+            <!-- 右側：數據統計區 -->
+            <div class="bg-white rounded-3xl p-8 custom-shadow border border-slate-100 flex flex-col h-full">
+                <h2 class="text-2xl font-bold mb-6 flex items-center text-slate-900">
+                    <span class="mr-2">📏</span> 黃金比例分析
+                </h2>
+                
+                <!-- 綜合比例大看板 -->
+                <div class="mb-10 text-center p-6 bg-indigo-50 rounded-2xl border border-indigo-100">
+                    <p class="text-xs text-indigo-400 font-bold tracking-widest uppercase mb-1">您的當前比例</p>
+                    <div id="ratio-summary" class="text-3xl font-black text-indigo-700 tracking-tighter">
+                        -- : -- : --
+                    </div>
+                </div>
+
+                <div class="space-y-8 flex-grow">
+                    <!-- 上庭 -->
+                    <div>
+                        <div class="flex justify-between items-end mb-2">
+                            <span class="font-bold text-slate-600">上庭 (Forehead)</span>
+                            <span id="ratio-1-val" class="text-xl font-black text-blue-600">--</span>
+                        </div>
+                        <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                            <div id="ratio-1-bar" class="bg-blue-500 h-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <!-- 中庭 -->
+                    <div>
+                        <div class="flex justify-between items-end mb-2">
+                            <span class="font-bold text-slate-600">中庭 (Middle)</span>
+                            <span id="ratio-2-val" class="text-xl font-black text-emerald-600">--</span>
+                        </div>
+                        <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                            <div id="ratio-2-bar" class="bg-emerald-500 h-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <!-- 下庭 -->
+                    <div>
+                        <div class="flex justify-between items-end mb-2">
+                            <span class="font-bold text-slate-600">下庭 (Lower)</span>
+                            <span id="ratio-3-val" class="text-xl font-black text-rose-600">--</span>
+                        </div>
+                        <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                            <div id="ratio-3-bar" class="bg-rose-500 h-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-10 p-5 bg-slate-800 text-slate-100 rounded-2xl shadow-inner">
+                    <h3 class="font-bold text-amber-400 mb-2 flex items-center">
+                        <span class="mr-2">💬</span> 毒舌點評
+                    </h3>
+                    <p id="commentary" class="text-sm leading-relaxed text-slate-300 min-h-[3rem]">
+                        尚未檢測到五官。請先上傳照片並對準線條。
+                    </p>
+                </div>
+                
+                <button onclick="location.reload()" class="w-full mt-6 py-3 bg-slate-100 text-slate-500 font-bold rounded-xl hover:bg-slate-200 transition active:scale-95">
+                    重測一次
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('file-input');
+        const uploadPrompt = document.getElementById('upload-prompt');
+        const imageWorkspace = document.getElementById('image-workspace');
+        const previewImg = document.getElementById('preview-img');
+        const imageContainer = document.getElementById('image-container');
+        const dropZone = document.getElementById('drop-zone');
+
+        const lines = [
+            document.getElementById('line-1'),
+            document.getElementById('line-2'),
+            document.getElementById('line-3'),
+            document.getElementById('line-4')
+        ];
+
+        let activeLine = null;
+        let containerRect = null;
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) handleFile(file);
+        });
+
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('bg-indigo-50', 'border-indigo-300'); });
+        dropZone.addEventListener('dragleave', () => { dropZone.classList.remove('bg-indigo-50', 'border-indigo-300'); });
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('bg-indigo-50', 'border-indigo-300');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) handleFile(file);
+        });
+
+        function handleFile(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                previewImg.src = e.target.result;
+                uploadPrompt.classList.add('hidden');
+                imageWorkspace.classList.remove('hidden');
+                // 初始位置設置
+                lines[0].style.top = '15%';
+                lines[1].style.top = '35%';
+                lines[2].style.top = '60%';
+                lines[3].style.top = '85%';
+                setTimeout(updateCalculations, 150);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        lines.forEach(line => {
+            const startDragging = (e) => {
+                e.preventDefault();
+                activeLine = line;
+                line.classList.add('line-active');
+                containerRect = imageContainer.getBoundingClientRect();
+                
+                const moveEvent = e.type === 'touchstart' ? 'touchmove' : 'mousemove';
+                const upEvent = e.type === 'touchstart' ? 'touchend' : 'mouseup';
+
+                const onMove = (me) => {
+                    const clientY = me.type === 'touchmove' ? me.touches[0].clientY : me.clientY;
+                    let relativeY = clientY - containerRect.top;
+                    let percentage = (relativeY / containerRect.height) * 100;
+                    percentage = Math.max(0, Math.min(100, percentage));
+                    activeLine.style.top = percentage + '%';
+                    updateCalculations();
+                };
+
+                const onUp = () => {
+                    activeLine.classList.remove('line-active');
+                    activeLine = null;
+                    document.removeEventListener('mousemove', onMove);
+                    document.removeEventListener('mouseup', onUp);
+                    document.removeEventListener('touchmove', onMove);
+                    document.removeEventListener('touchend', onUp);
+                };
+
+                document.addEventListener('mousemove', onMove);
+                document.addEventListener('mouseup', onUp);
+                document.addEventListener('touchmove', onMove, { passive: false });
+                document.addEventListener('touchend', onUp);
+            };
+
+            line.addEventListener('mousedown', startDragging);
+            line.addEventListener('touchstart', startDragging);
+        });
+
+        function updateCalculations() {
+            const pos = lines.map(l => parseFloat(l.style.top));
+            
+            const h1 = pos[1] - pos[0]; // 上庭
+            const h2 = pos[2] - pos[1]; // 中庭
+            const h3 = pos[3] - pos[2]; // 下庭
+
+            if (h1 > 0 && h2 > 0 && h3 > 0) {
+                // 以第一個 (上庭) 為基準 1，或是以最小的為基準？
+                // 通常 1:1:1 是指相對值，我們以「上庭」作為 1 的基準點來顯示
+                const r1 = 1;
+                const r2 = h2 / h1;
+                const r3 = h3 / h1;
+
+                updateUI(r1, r2, r3, h1, h2, h3);
+            } else {
+                if (pos.some((v, i) => i > 0 && v < pos[i-1])) {
+                    document.getElementById('commentary').innerText = "線條順序錯了啦！你的鼻孔長在額頭上嗎？請重新對齊。";
+                }
+            }
+        }
+
+        function updateUI(r1, r2, r3, h1, h2, h3) {
+            // 格式化顯示
+            const f1 = r1.toFixed(2);
+            const f2 = r2.toFixed(2);
+            const f3 = r3.toFixed(2);
+
+            document.getElementById('ratio-summary').innerText = `${f1} : ${f2} : ${f3}`;
+            
+            document.getElementById('ratio-1-val').innerText = f1;
+            document.getElementById('ratio-2-val').innerText = f2;
+            document.getElementById('ratio-3-val').innerText = f3;
+
+            // 進度條顯示百分比 (視覺化用)
+            const total = h1 + h2 + h3;
+            document.getElementById('ratio-1-bar').style.width = (h1/total*100) * 3 + '%'; // 放大顯示差異
+            document.getElementById('ratio-2-bar').style.width = (h2/total*100) * 3 + '%';
+            document.getElementById('ratio-3-bar').style.width = (h3/total*100) * 3 + '%';
+
+            generateCommentary(r2, r3);
+        }
+
+        function generateCommentary(r2, r3) {
+            const commentEl = document.getElementById('commentary');
+            
+            // 判斷偏差值 (相對於 1)
+            const d2 = Math.abs(r2 - 1);
+            const d3 = Math.abs(r3 - 1);
+            const totalDiff = d2 + d3;
+
+            if (totalDiff < 0.05) {
+                commentEl.innerText = "這比例...你是從畫裡走出來的吧？完美 1:1:1，連整型醫師都要失業了。";
+            } else if (r2 > 1.2) {
+                commentEl.innerText = "中庭特別突出呢！看來是個氣場強大的成熟派，或是你的鼻子真的非常有存在感。";
+            } else if (r3 > 1.2) {
+                commentEl.innerText = "下庭比例較高，這就是所謂的『晚年運極佳』吧？下巴有肉，衣食無憂！";
+            } else if (r2 < 0.8) {
+                commentEl.innerText = "中庭偏短，這比例看起來非常有幼態感，恭喜你獲得了永遠的「童顏」護身符。";
+            } else if (r3 < 0.8) {
+                commentEl.innerText = "下巴精緻小巧，拍照一定很上鏡，但記得要把線條對準，別把下巴弄沒了。";
+            } else {
+                commentEl.innerText = "比例相當協調！雖然有些微差距，但這正是你獨特的魅力所在，這臉我給過。";
+            }
+        }
+    </script>
+</body>
+</html>

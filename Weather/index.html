@@ -2,38 +2,63 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>善化動態天氣</title>
+    <title>善化天氣高級儀表板</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .wind-arrow { transition: transform 0.5s ease-in-out; }
+    </style>
 </head>
-<body class="bg-slate-900 text-white min-h-screen flex items-center justify-center">
-    <div class="bg-slate-800 p-8 rounded-2xl shadow-2xl w-full max-w-md border border-slate-700">
-        <div class="flex justify-between items-center mb-6">
-            <h1 class="text-2xl font-bold text-blue-400">善化即時天氣</h1>
-            <span id="update-time" class="text-xs text-slate-400">更新中...</span>
+<body class="bg-slate-900 text-white min-h-screen flex items-center justify-center p-4">
+    <div class="bg-slate-800 p-8 rounded-3xl shadow-2xl w-full max-w-md border border-slate-700">
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-2xl font-bold text-blue-400">善化即時觀測</h1>
+                <p id="update-time" class="text-xs text-slate-500">更新中...</p>
+            </div>
+            <div id="weather-icon" class="text-5xl">⏳</div>
         </div>
 
-        <div class="flex items-center justify-between">
-            <div>
-                <div id="temp" class="text-6xl font-extrabold tracking-tighter">--°C</div>
-                <div id="weather" class="text-lg text-slate-300 mt-2">讀取中...</div>
+        <div class="mb-10 text-center">
+            <div id="temp" class="text-7xl font-black tracking-tighter mb-2">--°C</div>
+            <div id="weather-desc" class="inline-block px-4 py-1 bg-slate-700 rounded-full text-sm text-blue-300">讀取中...</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-6 pt-6 border-t border-slate-700">
+            <div class="bg-slate-700/50 p-4 rounded-2xl">
+                <div class="text-slate-400 text-xs mb-1">濕度狀況 <span id="humi-icon"></span></div>
+                <div id="humidity" class="text-xl font-bold text-cyan-400">-- %</div>
+                <div id="humi-desc" class="text-xs text-slate-300 mt-1">--</div>
             </div>
-            <div id="weather-icon" class="text-6xl">⏳</div>
+
+            <div class="bg-slate-700/50 p-4 rounded-2xl">
+                <div class="text-slate-400 text-xs mb-1 flex items-center gap-1">
+                    風速風向 <span id="wind-dir-icon" class="wind-arrow inline-block">↑</span>
+                </div>
+                <div id="wind-speed" class="text-xl font-bold text-emerald-400">-- m/s</div>
+                <div id="wind-desc" class="text-xs text-slate-300 mt-1">--</div>
+            </div>
         </div>
         
-        <button onclick="fetchWeather()" class="w-full mt-8 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg font-medium transition-colors">重新整理</button>
+        <button onclick="fetchWeather()" class="w-full mt-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 rounded-xl font-bold transition-all shadow-lg active:scale-95">
+            同步最新數據
+        </button>
     </div>
 
     <script>
-        const API_KEY = 'CWA-47959DBE-C1BD-4EF1-B98D-3734272A4872';
-        const STATION_NAME = '善化'; 
+        const API_KEY = 'CWA-47959DBE-C1BD-4EF1-B98D-3734272A4872'; // 記得填入你的 Key
+        const STATION_NAME = '善化';
 
-        // 邏輯：根據天氣字串回傳 Emoji
-        function getWeatherIcon(desc) {
-            if (desc.includes('雨')) return '🌧️';
-            if (desc.includes('雲')) return '☁️';
-            if (desc.includes('陰')) return '🌥️';
-            if (desc.includes('雷')) return '⛈️';
-            return '☀️'; // 預設太陽
+        function getHumiInfo(rh) {
+            if (rh < 45) return { icon: '🌵', text: '環境乾燥' };
+            if (rh > 75) return { icon: '💦', text: '非常潮濕' };
+            return { icon: '✨', text: '濕度舒適' };
+        }
+
+        function getWindInfo(speed) {
+            if (speed < 0.3) return '無風';
+            if (speed < 3.4) return '微風徐徐';
+            if (speed < 8.0) return '勁風強勁';
+            return '強風注意';
         }
 
         async function fetchWeather() {
@@ -41,20 +66,44 @@
                 const url = `https://opendata.cwa.gov.tw/api/v1/rest/datastore/O-A0001-001?Authorization=${API_KEY}&StationName=${encodeURIComponent(STATION_NAME)}`;
                 const response = await fetch(url);
                 const data = await response.json();
-                
                 const station = data.records.Station[0];
                 const obs = station.WeatherElement;
-                const weatherDesc = station.Weather || "晴";
 
+                // 1. 基礎天氣與溫度
                 document.getElementById('temp').innerText = `${obs.AirTemperature}°C`;
-                document.getElementById('weather').innerText = weatherDesc;
-                document.getElementById('weather-icon').innerText = getWeatherIcon(weatherDesc);
-                document.getElementById('update-time').innerText = `觀測時間：${station.ObsTime.DateTime.split('T')[1].substring(0, 5)}`;
+                document.getElementById('weather-desc').innerText = station.Weather || "觀測站無描述";
+                
+                // 2. 濕度邏輯
+                const humi = obs.RelativeHumidity;
+                const hInfo = getHumiInfo(humi);
+                document.getElementById('humidity').innerText = `${humi}%`;
+                document.getElementById('humi-icon').innerText = hInfo.icon;
+                document.getElementById('humi-desc').innerText = hInfo.text;
+
+                // 3. 風速與風向邏輯
+                const speed = obs.WindSpeed;
+                const direction = obs.WindDirection; // 角度 0-360
+                document.getElementById('wind-speed').innerText = `${speed} m/s`;
+                document.getElementById('wind-desc').innerText = getWindInfo(speed);
+                document.getElementById('wind-dir-icon').style.transform = `rotate(${direction}deg)`;
+
+                // 4. 更新時間
+                document.getElementById('update-time').innerText = `觀測時間：${station.ObsTime.DateTime.replace('T', ' ').substring(11, 16)}`;
+                
+                // 5. 動態天氣圖標
+                const weatherStr = station.Weather || "";
+                let icon = '☀️';
+                if (weatherStr.includes('雨')) icon = '🌧️';
+                else if (weatherStr.includes('雲')) icon = '☁️';
+                else if (weatherStr.includes('陰')) icon = '🌥️';
+                document.getElementById('weather-icon').innerText = icon;
+
             } catch (error) {
-                document.getElementById('weather').innerText = "讀取失敗，請檢查 Key";
-                document.getElementById('weather-icon').innerText = "❌";
+                console.error(error);
+                alert("抓取失敗，請確認 API Key 與網路狀況。");
             }
         }
+
         fetchWeather();
     </script>
 </body>
