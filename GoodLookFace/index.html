@@ -8,10 +8,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <style>
-        /* 增加觸控熱區，讓線更好抓 */
         .line-handle {
             transition: background-color 0.2s;
-            height: 2px; /* 視覺線條 */
+            height: 2px;
         }
         .line-handle::after {
             content: '';
@@ -31,7 +30,6 @@
             box-shadow: 0 0 15px rgba(251, 191, 36, 0.9);
             height: 4px;
         }
-        /* 禁止在操作區捲動 */
         #image-container, .cropper-container {
             touch-action: none;
         }
@@ -41,7 +39,6 @@
         .cropper-view-box, .cropper-face {
             border-radius: 8px;
         }
-        /* 讓標籤不會被手指擋住 */
         .line-label {
             transform: translateY(-50%);
             pointer-events: none;
@@ -59,13 +56,11 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
             
-            <!-- 左側：圖片編輯/裁切區 -->
             <div class="lg:col-span-2 space-y-4">
                 <div id="drop-zone" class="relative bg-white border-4 border-dashed border-stone-200 rounded-3xl p-3 md:p-4 min-h-[400px] md:min-h-[550px] flex flex-col items-center justify-center overflow-hidden custom-shadow transition-all">
                     
                     <input type="file" id="file-input" class="hidden" accept="image/*">
                     
-                    <!-- 1. 上傳導引 -->
                     <div id="upload-prompt" class="text-center p-4">
                         <div class="bg-amber-100 text-amber-700 p-5 rounded-full inline-block mb-4">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 md:w-12 md:h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -79,7 +74,6 @@
                         </button>
                     </div>
 
-                    <!-- 2. 裁切區域 -->
                     <div id="crop-workspace" class="hidden w-full h-full flex flex-col items-center">
                         <div class="w-full max-h-[50vh] md:max-h-[60vh] overflow-hidden rounded-xl bg-stone-900">
                             <img id="crop-img" class="max-w-full">
@@ -90,12 +84,10 @@
                         </div>
                     </div>
 
-                    <!-- 3. 鑑定區域 -->
                     <div id="image-workspace" class="hidden relative w-full h-full flex items-center justify-center py-4">
                         <div id="image-container" class="relative inline-block cursor-crosshair">
                             <img id="preview-img" class="max-w-full max-h-[65vh] md:max-h-[75vh] rounded-lg select-none pointer-events-none shadow-xl">
                             
-                            <!-- 拖曳線 -->
                             <div id="line-1" class="line-handle absolute left-0 right-0 bg-white/60 z-10 flex items-center justify-end" style="top: 20%;">
                                 <span class="line-label bg-black/70 text-white text-[10px] md:text-[11px] px-2 py-1 rounded-l-md font-bold">髮際線</span>
                             </div>
@@ -113,7 +105,6 @@
                 </div>
             </div>
 
-            <!-- 右側：數據統計區 -->
             <div class="bg-white rounded-3xl p-6 md:p-8 custom-shadow border border-stone-100 flex flex-col h-full">
                 <h2 class="text-xl md:text-2xl font-bold mb-4 md:mb-6 flex items-center text-stone-900">
                     <span class="mr-2 text-2xl">🔎</span> 優熊屬性鑑定
@@ -158,9 +149,9 @@
                     </div>
                 </div>
 
-                <div class="mt-8 p-4 bg-stone-900 text-stone-100 rounded-2xl shadow-inner">
+                <div class="mt-8 p-4 bg-stone-900 text-stone-100 rounded-2xl shadow-inner border-l-4 border-amber-500">
                     <h3 class="font-bold text-amber-400 mb-1 flex items-center text-sm md:text-base">
-                        <span class="mr-2">📢</span> 鑑定結果
+                        <span class="mr-2">📢</span> 鑑定結果：<span id="type-title" class="ml-1 text-white">等待數據</span>
                     </h3>
                     <p id="commentary" class="text-xs md:text-sm leading-relaxed text-stone-300 min-h-[3rem]">
                         請上傳照片並裁切臉部，讓本機器人鑑定一下。
@@ -270,9 +261,7 @@
 
         lines.forEach(line => {
             const startDragging = (e) => {
-                // 阻止捲動，這在手機上很重要
                 if (e.cancelable) e.preventDefault();
-                
                 activeLine = line;
                 line.classList.add('line-active');
                 containerRect = imageContainer.getBoundingClientRect();
@@ -339,23 +328,56 @@
         }
 
         function generateCommentary(r2, r3) {
+            const titleEl = document.getElementById('type-title');
             const commentEl = document.getElementById('commentary');
+            
             const d2 = Math.abs(r2 - 1);
             const d3 = Math.abs(r3 - 1);
-            const totalDiff = d2 + d3;
 
-            if (totalDiff < 0.05) {
-                commentEl.innerText = "這比例...你是優熊界的天菜吧？1:1:1 的完美比例，不管是粗曠風還是型男風都能完美駕馭！";
-            } else if (r2 > 1.2) {
-                commentEl.innerText = "中庭偏長，這可是標準的「熟男熊」比例！看起來英氣逼人，很有成熟可靠的大叔感。";
-            } else if (r3 > 1.2) {
-                commentEl.innerText = "下庭有力，這是穩重「霸氣熊」的象徵。如果你有留鬍子，那威懾力簡集爆表！";
-            } else if (r2 < 0.8) {
-                commentEl.innerText = "中庭偏短，是個可愛的「奶熊」呢！這種幼態比例最容易激發別人的保護欲了。";
-            } else if (r3 < 0.8) {
-                commentEl.innerText = "下巴精緻，屬於「型男熊」路線。記得要把鬍渣修乾淨，走一個俐落帥氣的風格。";
-            } else {
-                commentEl.innerText = "這比例很標準！很有「鄰家優熊」的親和力，是那種走在路上回頭率會很高的類型喔。";
+            // 1. 完美黃金比例
+            if (d2 < 0.05 && d3 < 0.05) {
+                titleEl.innerText = "天選之熊 (1:1:1)";
+                commentEl.innerText = "這比例簡直是精密儀器量出來的！你是優熊界的天菜，不管是粗曠落腮鬍還是清爽型男風都能完美駕馭，上輩子一定拯救過森林。";
+            } 
+            // 2. 中庭、下庭都長 (長臉熟男)
+            else if (r2 > 1.15 && r3 > 1.15) {
+                titleEl.innerText = "高階總裁熊";
+                commentEl.innerText = "中庭與下庭都有長度，自帶一種成熟、多金、且隨時準備開會的氣場。這種比例最適合穿西裝，光是站著就能讓小熊們心跳加速。";
+            }
+            // 3. 中庭特長 (熟男英氣)
+            else if (r2 > 1.25) {
+                titleEl.innerText = "英氣熟男熊";
+                commentEl.innerText = "中庭長代表你具備強大的英氣與智慧感。你看起來非常可靠，是那種會幫大家訂好餐廳、處理好所有雜事的「隊長型」優熊。";
+            }
+            // 4. 下庭特長 (霸氣領袖)
+            else if (r3 > 1.25) {
+                titleEl.innerText = "威嚴領袖熊";
+                commentEl.innerText = "下巴有力，代表你有著不可撼動的意志力。如果你留起落腮鬍，威懾力會直接爆表，是優熊部落裡當之無愧的 Alpha。";
+            }
+            // 5. 中庭短 (萌系幼態)
+            else if (r2 < 0.85) {
+                titleEl.innerText = "萌系小奶熊";
+                commentEl.innerText = "中庭短是標準的「幼態比例」，這讓你即使長得壯碩，看起來還是有個可愛的靈魂。最容易激發別人的保護欲，賣萌完全無壓力！";
+            }
+            // 6. 下庭短 (精靈型男)
+            else if (r3 < 0.85) {
+                titleEl.innerText = "精靈帥氣熊";
+                commentEl.innerText = "下巴精緻縮短，讓你帶有一種都會美型男的氣質。這比例很吃虧，一變胖就會有雙下巴，記得要勤練下顎線，走精緻路線就對了。";
+            }
+            // 7. 中庭 > 下庭 (高冷氣質)
+            else if (r2 > r3 + 0.15) {
+                titleEl.innerText = "高冷優雅熊";
+                commentEl.innerText = "中庭比下庭長，讓你有種不輕易親近的高冷美感。你不笑的時候看起來很兇，但一旦笑起來，那種反差萌才是最致命的武器。";
+            }
+            // 8. 下庭 > 中庭 (厚實穩重)
+            else if (r3 > r2 + 0.15) {
+                titleEl.innerText = "厚實穩重熊";
+                commentEl.innerText = "下庭佔比大，給人一種地基很穩、絕對不會跑掉的安心感。你是最適合給人抱抱的類型，溫柔的力量是你最大的魅力所在。";
+            }
+            // 9. 標準親和比例
+            else {
+                titleEl.innerText = "鄰家天菜熊";
+                commentEl.innerText = "比例均衡且自然，是那種在交友軟體上回訊率最高、走在路上親和力十足的類型。不論跟誰站在一起都很搭，是大家眼中的百搭型優熊。";
             }
         }
 
@@ -386,9 +408,10 @@
             const canvas = document.getElementById('export-canvas');
             const ctx = canvas.getContext('2d');
             const img = document.getElementById('preview-img');
+            const typeTitle = document.getElementById('type-title').innerText;
             const comment = document.getElementById('commentary').innerText;
 
-            const footerHeight = Math.max(220, img.naturalWidth * 0.4);
+            const footerHeight = Math.max(220, img.naturalWidth * 0.45);
             canvas.width = img.naturalWidth;
             canvas.height = img.naturalHeight + footerHeight;
 
@@ -420,7 +443,8 @@
             ctx.textAlign = 'center';
             const maxWidth = img.naturalWidth * 0.9;
             
-            const mainText = `優熊鑑定比例：${currentRatios.f1} : ${currentRatios.f2} : ${currentRatios.f3}`;
+            // 標題 (比例 + 類型)
+            const mainText = `${typeTitle} | ${currentRatios.f1} : ${currentRatios.f2} : ${currentRatios.f3}`;
             let mainFontSize = Math.max(28, img.naturalWidth / 12);
             ctx.font = `900 ${mainFontSize}px Sans-serif`;
             while (ctx.measureText(mainText).width > maxWidth && mainFontSize > 14) {
@@ -430,13 +454,15 @@
             ctx.fillStyle = '#92400e';
             ctx.fillText(mainText, canvas.width / 2, footerY + (footerHeight * 0.28));
             
+            // 評語內容
             let commentFontSize = Math.max(16, img.naturalWidth / 30);
             ctx.font = `italic ${commentFontSize}px Sans-serif`;
             ctx.fillStyle = '#44403c';
             const lineHeight = commentFontSize * 1.5;
-            wrapText(ctx, "結果點評：" + comment, canvas.width / 2, footerY + (footerHeight * 0.48), maxWidth, lineHeight);
+            wrapText(ctx, comment, canvas.width / 2, footerY + (footerHeight * 0.5), maxWidth, lineHeight);
 
-            const subText = "優熊鑑定儀 | 天菜還是需要鬍子補救？";
+            // 浮水印
+            const subText = "優熊比例鑑定儀 | 交出你的正臉，讓我看清你的命運";
             let subFontSize = Math.max(12, img.naturalWidth / 45);
             ctx.font = `${subFontSize}px Sans-serif`;
             ctx.fillStyle = '#a8a29e';
@@ -444,7 +470,7 @@
 
             try {
                 const link = document.createElement('a');
-                link.download = `bear-analysis-${Date.now()}.jpg`;
+                link.download = `bear-result-${Date.now()}.jpg`;
                 link.href = canvas.toDataURL('image/jpeg', 0.9);
                 link.click();
             } catch (err) {
