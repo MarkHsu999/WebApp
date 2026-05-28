@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智慧十字路口模擬器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #f3f4f6; font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; }
+        canvas { background-color: #3f9121; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen p-4">
+
+    <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-5xl flex flex-col lg:flex-row gap-6">
+        <!-- 控制面板 -->
+        <div class="flex-1 flex flex-col gap-4">
+            <h1 class="text-2xl font-bold text-gray-800 border-b pb-2">🚦 智慧路口 (拉鏈變道防重疊版)</h1>
+            <p class="text-sm text-gray-500">
+                本系統完美重現真實道路幾何！車輛在接近路口時，中央分隔島收窄以騰出「左轉專用道」。
+                最右側車道為<strong>直行與右轉混合車道</strong>，並升級了<strong>超亮 LED 煞車尾燈</strong>！
+            </p>
+            
+            <div class="space-y-4 mt-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">南北向車流量 (輛/分鐘): <span id="ns-val" class="font-bold text-blue-600">30</span></label>
+                    <input type="range" id="ns-rate" min="0" max="120" value="30" class="w-full accent-blue-600">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">東西向車流量 (輛/分鐘): <span id="ew-val" class="font-bold text-red-600">30</span></label>
+                    <input type="range" id="ew-rate" min="0" max="120" value="30" class="w-full accent-red-600">
+                </div>
+
+                <!-- 大車機率拉霸 -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">大車 (學長) 出現機率: <span id="truck-val" class="font-bold text-purple-600">20</span>%</label>
+                    <input type="range" id="truck-rate" min="0" max="100" value="20" class="w-full accent-purple-600">
+                    <p class="text-xs text-gray-400 mt-1">其餘為小車（預設大車:小車 = 2:8）</p>
+                </div>
+            </div>
+
+            <div class="mt-auto pt-4 border-t space-y-2 text-sm font-mono text-gray-600">
+                <div class="flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span>控制邏輯：動態時相（依據車流比例即時增減綠燈秒數）</span>
+                </div>
+                <div class="p-3 bg-gray-50 rounded-lg text-gray-700">
+                    當前號誌狀態: <span id="light-status" class="font-bold text-green-600">南北直行綠燈 ⬆️</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 畫布 -->
+        <div class="flex-none flex justify-center items-center">
+            <canvas id="simCanvas" width="700" height="700" class="max-w-full h-auto"></canvas>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+        const nsRateInput = document.getElementById('ns-rate');
+        const ewRateInput = document.getElementById('ew-rate');
+        const truckRateInput = document.getElementById('truck-rate');
+        const nsVal = document.getElementById('ns-val');
+        const ewVal = document.getElementById('ew-val');
+        const truckVal = document.getElementById('truck-val');
+        const lightStatusTxt = document.getElementById('light-status');
+
+        // 道路基礎物理參數
+        const center = 350; 
+        const roadWidth = 160; 
+        const safeDistance = 60; 
+        
+        // 號誌狀態 (台灣標準 8 時相)
+        let lightState = 0;
+        let lightTimer = 0;
+        let phaseDurations = [4000, 1500, 3000, 1500, 4000, 1500, 3000, 1500];
+
+        // 停止線設定
+        const stopLines = {
+            'N': center - roadWidth/2 - 10, // 260
+            'S': center + roadWidth/2 + 10, // 440
+            'W': center - roadWidth/2 - 10, // 260
+            'E': center + roadWidth/2 + 10  // 440
+        };
+
+        let cars = [];
+        let lastTime = performance.now();
+        let spawnTimers = { NS: 0, EW: 0 };
+
+        nsRateInput.oninput = () => nsVal.textContent = nsRateInput.value;
+        ewRateInput.oninput = () => ewVal.textContent = ewRateInput.value;
+        truckRateInput.oninput = () => truckVal.textContent = truckRateInput.value;
+
+        // 圓角矩形繪製輔助
+        function drawRoundRect(ctx, x, y, width, height, radius, fill = true, stroke = false) {
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + width - radius, y);
+            ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+            ctx.lineTo(x + width, y + height - radius);
+            ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+            ctx.lineTo(x + radius, y + height);
+            ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+            ctx.closePath();
+            if (fill) ctx.fill();
+            if (stroke) ctx.stroke();
+        }
+
+        class Car {
+            constructor(originDir) {
+                this.originDir = originDir;
+                this.dir = originDir;
+                this.birth = performance.now(); // 記錄車輛誕生時間，用來作為變道避讓的黃金法則
+                
+                // 動態分配行車意向：60%直行、20%左轉、20%右轉
+                const turnRand = Math.random();
+                if (turnRand < 0.20) {
+                    this.turn = 'left';
+                } else if (turnRand < 0.40) {
+                    this.turn = 'right';
+                } else {
+                    this.turn = 'straight';
+                }
+
+                this.color = `hsl(${Math.random() * 360}, 85%, 50%)`;
+                
+                // 根據拉霸動態決定車款 (大車 vs 小車)
+                const truckProbability = parseInt(truckRateInput.value) / 100;
+                const randType = Math.random();
+
+                if (randType < truckProbability) {
+                    // 大卡車 (學長)
+                    this.type = 'truck';
+                    this.length = 52; 
+                    this.width = 17;
+                    this.maxSpeed = 2.0;
+                } else {
+                    // 小車 (依照原比例 5:3 隨機分派轎車或 SUV)
+                    const smallCarRand = Math.random();
+                    if (smallCarRand < 0.625) { 
+                        this.type = 'sedan';
+                        this.length = 28;
+                        this.width = 14;
+                        this.maxSpeed = 3.2;
+                    } else {
+                        this.type = 'suv';
+                        this.length = 32;
+                        this.width = 16;
+                        this.maxSpeed = 2.8;
+                    }
+                }
+
+                this.speed = this.maxSpeed;
+                
+                // 車道指派
+                if (this.turn === 'straight') {
+                    this.laneIndex = Math.random() > 0.5 ? 1 : 2; // 1: 內側直行, 2: 外側直行 (混合車道)
+                } else if (this.turn === 'left') {
+                    this.laneIndex = 0; // 左轉專用口袋道
+                } else {
+                    this.laneIndex = 2; // 右轉車強制行駛外側混合車道
+                }
+
+                this.turning = false;
+                this.turnT = 0; // 0 到 1 內插
+                this.isBraking = false;
+
+                // 先設定縱向起始位置（y 座標），才能正確計算 getLateralTarget()
+                if (originDir === 'N') { 
+                    this.y = -this.length; 
+                    this.x = this.getLateralTarget(); 
+                    this.angle = Math.PI / 2; 
+                }
+                if (originDir === 'S') { 
+                    this.y = canvas.height + this.length; 
+                    this.x = this.getLateralTarget(); 
+                    this.angle = -Math.PI / 2; 
+                }
+                if (originDir === 'W') { 
+                    this.x = -this.length; 
+                    this.y = this.getLateralTarget(); 
+                    this.angle = 0; 
+                }
+                if (originDir === 'E') { 
+                    this.x = canvas.width + this.length; 
+                    this.y = this.getLateralTarget(); 
+                    this.angle = Math.PI; 
+                }
+
+                this.setupBezierPoints();
+            }
+
+            // 設定左轉與右轉的貝茲曲線控制點
+            setupBezierPoints() {
+                if (this.originDir === 'N') {
+                    if (this.turn === 'left') {
+                        this.P0 = { x: 345, y: 260 };
+                        this.P1 = { x: 345, y: 385 };
+                        this.P2 = { x: 440, y: 385 };
+                    } else if (this.turn === 'right') {
+                        this.P0 = { x: 285, y: 260 };
+                        this.P1 = { x: 285, y: 285 };
+                        this.P2 = { x: 260, y: 285 };
+                    }
+                } else if (this.originDir === 'S') {
+                    if (this.turn === 'left') {
+                        this.P0 = { x: 355, y: 440 };
+                        this.P1 = { x: 355, y: 315 };
+                        this.P2 = { x: 260, y: 315 };
+                    } else if (this.turn === 'right') {
+                        this.P0 = { x: 415, y: 440 };
+                        this.P1 = { x: 415, y: 415 };
+                        this.P2 = { x: 440, y: 415 };
+                    }
+                } else if (this.originDir === 'W') {
+                    if (this.turn === 'left') {
+                        this.P0 = { x: 260, y: 355 };
+                        this.P1 = { x: 385, y: 355 };
+                        this.P2 = { x: 385, y: 260 };
+                    } else if (this.turn === 'right') {
+                        this.P0 = { x: 260, y: 415 };
+                        this.P1 = { x: 285, y: 415 };
+                        this.P2 = { x: 285, y: 440 };
+                    }
+                } else if (this.originDir === 'E') {
+                    if (this.turn === 'left') {
+                        this.P0 = { x: 440, y: 345 };
+                        this.P1 = { x: 315, y: 345 };
+                        this.P2 = { x: 315, y: 440 };
+                    } else if (this.turn === 'right') {
+                        this.P0 = { x: 440, y: 285 };
+                        this.P1 = { x: 415, y: 285 };
+                        this.P2 = { x: 415, y: 260 };
+                    }
+                }
+            }
+
+            // 動態計算並回傳當前的目標橫向座標
+            getLateralTarget() {
+                if (this.originDir === 'N') {
+                    if (this.turn === 'straight') return this.laneIndex === 1 ? 315 : 285;
+                    // 左轉車漸變切入左轉口袋車道 (315 -> 345)
+                    if (this.turn === 'left') {
+                        if (this.y < 50) return 315;
+                        if (this.y > 120) return 345;
+                        let t = (this.y - 50) / 70;
+                        let smooth_t = t * t * (3 - 2 * t);
+                        return 315 + smooth_t * 30;
+                    }
+                    // 右轉車預先切入最右側外側車道 (315 -> 285)
+                    if (this.turn === 'right') {
+                        if (this.y < 50) return 315;
+                        if (this.y > 120) return 285;
+                        let t = (this.y - 50) / 70;
+                        let smooth_t = t * t * (3 - 2 * t);
+                        return 315 - smooth_t * 30;
+                    }
+                }
+                if (this.originDir === 'S') {
+                    if (this.turn === 'straight') return this.laneIndex === 1 ? 385 : 415;
+                    if (this.turn === 'left') {
+                        if (this.y > 650) return 385;
+                        if (this.y < 580) return 355;
+                        let t = (650 - this.y) / 70;
+                        let smooth_t = t * t * (3 - 2 * t);
+                        return 385 - smooth_t * 30;
+                    }
+                    if (this.turn === 'right') {
+                        if (this.y > 650) return 385;
+                        if (this.y < 580) return 415;
+                        let t = (650 - this.y) / 70;
+                        let smooth_t = t * t * (3 - 2 * t);
+                        return 385 + smooth_t * 30;
+                    }
+                }
+                if (this.originDir === 'W') {
+                    if (this.turn === 'straight') return this.laneIndex === 1 ? 385 : 415;
+                    if (this.turn === 'left') {
+                        if (this.x < 50) return 385;
+                        if (this.x > 120) return 355;
+                        let t = (this.x - 50) / 70;
+                        let smooth_t = t * t * (3 - 2 * t);
+                        return 385 - smooth_t * 30;
+                    }
+                    if (this.turn === 'right') {
+                        if (this.x < 50) return 385;
+                        if (this.x > 120) return 415;
+                        let t = (this.x - 50) / 70;
+                        let smooth_t = t * t * (3 - 2 * t);
+                        return 385 + smooth_t * 30;
+                    }
+                }
+                if (this.originDir === 'E') {
+                    if (this.turn === 'straight') return this.laneIndex === 1 ? 315 : 285;
+                    if (this.turn === 'left') {
+                        if (this.x > 650) return 315;
+                        if (this.x < 580) return 345;
+                        let t = (650 - this.x) / 70;
+                        let smooth_t = t * t * (3 - 2 * t);
+                        return 315 + smooth_t * 30;
+                    }
+                    if (this.turn === 'right') {
+                        if (this.x > 650) return 315;
+                        if (this.x < 580) return 285;
+                        let t = (650 - this.x) / 70;
+                        let smooth_t = t * t * (3 - 2 * t);
+                        return 315 - smooth_t * 30;
+                    }
+                }
+                return 0;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle);
+
+                const len = this.length;
+                const wid = this.width;
+
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.25)';
+                ctx.shadowBlur = 4;
+                ctx.shadowOffsetY = 2;
+
+                if (this.type === 'truck') {
+                    ctx.fillStyle = '#f3f4f6';
+                    drawRoundRect(ctx, -len/2, -wid/2, 32, wid, 2);
+                    ctx.fillStyle = '#4b5563';
+                    ctx.fillRect(-len/2 + 30, -3, 6, 6);
+                    ctx.fillStyle = this.color;
+                    drawRoundRect(ctx, -len/2 + 34, -wid/2 + 1, 18, wid - 2, 3);
+                    ctx.fillStyle = '#111827';
+                    ctx.fillRect(len/2 - 6, -wid/2 + 3, 3, wid - 6);
+                    ctx.fillStyle = '#111827';
+                    ctx.fillRect(-len/2 + 4, -wid/2 - 1.5, 6, 2);
+                    ctx.fillRect(-len/2 + 12, -wid/2 - 1.5, 6, 2);
+                    ctx.fillRect(len/2 - 10, -wid/2 - 1.5, 6, 2);
+                    ctx.fillRect(-len/2 + 4, wid/2 - 0.5, 6, 2);
+                    ctx.fillRect(-len/2 + 12, wid/2 - 0.5, 6, 2);
+                    ctx.fillRect(len/2 - 10, wid/2 - 0.5, 6, 2);
+                } else if (this.type === 'suv') {
+                    ctx.fillStyle = '#1f2937';
+                    drawRoundRect(ctx, -len/2, -wid/2, len, wid, 4);
+                    ctx.fillStyle = this.color;
+                    drawRoundRect(ctx, -len/2 + 2, -wid/2 + 1, len - 4, wid - 2, 3);
+                    ctx.fillStyle = '#374151';
+                    ctx.fillRect(-3, -wid/2 + 4, 10, wid - 8);
+                    ctx.fillStyle = '#111827';
+                    ctx.fillRect(-len/2 + 4, -wid/2 - 1, 6, 2);
+                    ctx.fillRect(len/2 - 10, -wid/2 - 1, 6, 2);
+                    ctx.fillRect(-len/2 + 4, wid/2 - 1, 6, 2);
+                    ctx.fillRect(len/2 - 10, wid/2 - 1, 6, 2);
+                } else {
+                    ctx.fillStyle = this.color;
+                    drawRoundRect(ctx, -len/2, -wid/2, len, wid, 4);
+                    ctx.fillStyle = '#1f2937';
+                    drawRoundRect(ctx, -5, -wid/2 + 2, 12, wid - 4, 2);
+                    ctx.fillStyle = '#111827';
+                    ctx.fillRect(-len/2 + 3, -wid/2 - 1, 5, 2);
+                    ctx.fillRect(len/2 - 8, -wid/2 - 1, 5, 2);
+                    ctx.fillRect(-len/2 + 3, wid/2 - 1, 5, 2);
+                    ctx.fillRect(len/2 - 8, wid/2 - 1, 5, 2);
+                }
+
+                ctx.shadowColor = 'transparent';
+                ctx.shadowBlur = 0;
+                ctx.shadowOffsetY = 0;
+
+                // 煞車燈
+                if (this.isBraking) {
+                    ctx.fillStyle = '#ff1100'; 
+                    ctx.fillRect(-len/2 - 2, -wid/2 + 2, 4, 4);
+                    ctx.fillRect(-len/2 - 2, wid/2 - 5, 4, 4);
+
+                    ctx.fillStyle = '#ffffff'; 
+                    ctx.fillRect(-len/2 - 0.5, -wid/2 + 2.5, 1, 1);
+                    ctx.fillRect(-len/2 - 0.5, wid/2 - 3.5, 1, 1);
+                } else {
+                    ctx.fillStyle = '#8b0000';
+                    ctx.fillRect(-len/2, -wid/2 + 2, 1.5, 2.5);
+                    ctx.fillRect(-len/2, wid/2 - 4.5, 1.5, 2.5);
+                }
+
+                // 前大燈
+                ctx.fillStyle = '#fef08a';
+                ctx.fillRect(len/2 - 1.5, -wid/2 + 2, 1.5, 2);
+                ctx.fillRect(len/2 - 1.5, wid/2 - 4, 1.5, 2);
+
+                // 前後方向燈 (依轉彎意向動態閃爍)
+                if (Date.now() % 600 > 300) {
+                    ctx.fillStyle = '#f59e0b'; 
+                    if (this.turn === 'left' && !this.turning && !this.angle == 0) { 
+                        ctx.fillRect(len/2 - 3, -wid/2 - 1.5, 3, 1.5); 
+                        ctx.fillRect(-len/2, -wid/2 - 1.5, 1.5, 1.5);
+                    } else if (this.turn === 'right' && !this.turning) {
+                        ctx.fillRect(len/2 - 3, wid/2, 3, 1.5); 
+                        ctx.fillRect(-len/2, wid/2, 1.5, 1.5);
+                    }
+                }
+
+                ctx.restore();
+            }
+
+            update(carsAhead) {
+                let currentMaxSpeed = this.maxSpeed;
+
+                // 號誌與停止線判定
+                let isRedOrYellow = false;
+                if (!this.turning) {
+                    if (this.originDir === 'N' || this.originDir === 'S') {
+                        if (this.turn === 'straight' || this.turn === 'right') isRedOrYellow = (lightState !== 0);
+                        if (this.turn === 'left') isRedOrYellow = (lightState !== 2);
+                    } else {
+                        if (this.turn === 'straight' || this.turn === 'right') isRedOrYellow = (lightState !== 4);
+                        if (this.turn === 'left') isRedOrYellow = (lightState !== 6);
+                    }
+                }
+
+                let distToStop = Infinity;
+                if (!this.turning) {
+                    if (this.originDir === 'N' && this.y < stopLines.N) distToStop = stopLines.N - this.y;
+                    if (this.originDir === 'S' && this.y > stopLines.S) distToStop = this.y - stopLines.S;
+                    if (this.originDir === 'W' && this.x < stopLines.W) distToStop = stopLines.W - this.x;
+                    if (this.originDir === 'E' && this.x > stopLines.E) distToStop = this.x - stopLines.E;
+                }
+
+                if (isRedOrYellow && distToStop > 0 && distToStop < safeDistance) {
+                    currentMaxSpeed = Math.max(0, (distToStop - this.length/2 - 5) * 0.18); 
+                }
+
+                // 智慧物理防撞判定 (採用局部座標投影法，精確、優雅且絕無重疊 Bug)
+                let minEdgeDist = Infinity;
+                
+                // 計算直行時使用路段「標稱方向角」進行投影
+                let nominalAngle = 0;
+                if (this.dir === 'N') nominalAngle = Math.PI / 2;
+                if (this.dir === 'S') nominalAngle = -Math.PI / 2;
+                if (this.dir === 'W') nominalAngle = 0;
+                if (this.dir === 'E') nominalAngle = Math.PI;
+
+                let checkAngle = this.turning ? this.angle : nominalAngle;
+                let cos = Math.cos(checkAngle);
+                let sin = Math.sin(checkAngle);
+
+                for (let other of carsAhead) {
+                    if (other === this) continue;
+
+                    // 關鍵修復 1：利用黃金「單向禮讓原則」，徹底排除死鎖
+                    let isAhead = false;
+                    if (this.originDir === other.originDir) {
+                        // 同向車：以行駛進度（Progress）來排序
+                        if (this.turning && other.turning) {
+                            isAhead = other.turnT > this.turnT;
+                        } else if (!this.turning && !other.turning) {
+                            if (this.originDir === 'N') isAhead = other.y > this.y;
+                            if (this.originDir === 'S') isAhead = other.y < this.y;
+                            if (this.originDir === 'W') isAhead = other.x > this.x;
+                            if (this.originDir === 'E') isAhead = other.x < this.x;
+                        } else {
+                            // 一方在轉彎，一方在直行：轉彎中的車進度優於直行的車
+                            if (other.turning && !this.turning) isAhead = true;
+                        }
+                    } else {
+                        // 異向交叉車（如路口大亂鬥）：用出生時間戳記，先出生（先進路口）的車就是前車！
+                        isAhead = other.birth < this.birth;
+                    }
+
+                    // 如果 other 根本不在我們的「前方」，我們直接忽略，絕不對踩煞車，防止集體卡死
+                    if (!isAhead) continue;
+
+                    let dx = other.x - this.x;
+                    let dy = other.y - this.y;
+
+                    // 將相對位移投影到本車的朝向軸上
+                    let rx = dx * cos + dy * sin;  
+                    let ry = -dx * sin + dy * cos; 
+
+                    // 側向重疊安全門檻：兩車半寬之和 + 安全緩衝 (6px)
+                    let safeLatDist = (this.width / 2 + other.width / 2) + 6;
+
+                    // 關鍵修復 2：移除 "edgeDist > 0" 的危險過濾器。
+                    // 只要在行進路上（rx > 0）且側向有重疊，不管距離多近、甚至變道切入一半時（負值），都要一律計算！
+                    if (rx > 0 && Math.abs(ry) < safeLatDist) {
+                        let edgeDist = rx - (this.length / 2 + other.length / 2);
+                        if (edgeDist < minEdgeDist) {
+                            minEdgeDist = edgeDist;
+                        }
+                    }
+                }
+
+                // 只要跟車距離小於 25px，甚至已經重疊（負值），速度會藉由 Math.max 直接降至 0（完全煞死），徹底杜絕重疊！
+                if (minEdgeDist < 25) { 
+                    let safeSpeed = Math.max(0, (minEdgeDist - 6) * 0.16);
+                    currentMaxSpeed = Math.min(currentMaxSpeed, safeSpeed);
+                }
+
+                this.isBraking = (currentMaxSpeed < this.maxSpeed - 0.15 || currentMaxSpeed < 0.2);
+                this.speed = currentMaxSpeed;
+                
+                // 位置與姿勢更新
+                if (this.turning) {
+                    this.turnT += this.speed / (this.turn === 'left' ? 110 : 65); 
+                    if (this.turnT >= 1) {
+                        this.turnT = 1;
+                        this.turning = false;
+                        
+                        let nextLane = (this.turn === 'left') ? 1 : 2;
+                        
+                        // 轉彎完成後，完美重置新道路屬性
+                        if (this.originDir === 'N') {
+                            if (this.turn === 'left') {
+                                this.originDir = 'W'; 
+                                this.dir = 'W';
+                                this.angle = 0;
+                            } else {
+                                this.originDir = 'E'; 
+                                this.dir = 'E';
+                                this.angle = Math.PI;
+                            }
+                        } else if (this.originDir === 'S') {
+                            if (this.turn === 'left') {
+                                this.originDir = 'E'; 
+                                this.dir = 'E';
+                                this.angle = Math.PI;
+                            } else {
+                                this.originDir = 'W'; 
+                                this.dir = 'W';
+                                this.angle = 0;
+                            }
+                        } else if (this.originDir === 'W') {
+                            if (this.turn === 'left') {
+                                this.originDir = 'S'; 
+                                this.dir = 'S';
+                                this.angle = -Math.PI / 2;
+                            } else {
+                                this.originDir = 'N'; 
+                                this.dir = 'N';
+                                this.angle = Math.PI / 2;
+                            }
+                        } else if (this.originDir === 'E') {
+                            if (this.turn === 'left') {
+                                this.originDir = 'N'; 
+                                this.dir = 'N';
+                                this.angle = Math.PI / 2;
+                            } else {
+                                this.originDir = 'S'; 
+                                this.dir = 'S';
+                                this.angle = -Math.PI / 2;
+                            }
+                        }
+                        
+                        this.turn = 'straight';
+                        this.laneIndex = nextLane; 
+                        this.x = this.P2.x;
+                        this.y = this.P2.y;
+                    } else {
+                        // 二次貝茲曲線插值
+                        let mt = 1 - this.turnT;
+                        this.x = mt * mt * this.P0.x + 2 * mt * this.turnT * this.P1.x + this.turnT * this.turnT * this.P2.x;
+                        this.y = mt * mt * this.P0.y + 2 * mt * this.turnT * this.P1.y + this.turnT * this.turnT * this.P2.y;
+                        
+                        let dx = 2 * mt * (this.P1.x - this.P0.x) + 2 * this.turnT * (this.P2.x - this.P1.x);
+                        let dy = 2 * mt * (this.P1.y - this.P0.y) + 2 * this.turnT * (this.P2.y - this.P1.y);
+                        this.angle = Math.atan2(dy, dx);
+                    }
+                } else {
+                    let lastX = this.x;
+                    let lastY = this.y;
+
+                    let targetLat = this.getLateralTarget();
+                    if (this.dir === 'N') { this.x = targetLat; this.y += this.speed; }
+                    if (this.dir === 'S') { this.x = targetLat; this.y -= this.speed; }
+                    if (this.dir === 'W') { this.y = targetLat; this.x += this.speed; }
+                    if (this.dir === 'E') { this.y = targetLat; this.x -= this.speed; }
+
+                    if (this.speed > 0.1) {
+                        this.angle = Math.atan2(this.y - lastY, this.x - lastX);
+                    }
+
+                    // 抵達停止線，觸發左右轉
+                    if (this.turn === 'left' || this.turn === 'right') {
+                        let triggerStop = false;
+                        if (this.originDir === 'N' && this.y >= stopLines.N) {
+                            if (this.turn === 'left' && Math.abs(this.x - 345) < 3) triggerStop = true;
+                            if (this.turn === 'right' && Math.abs(this.x - 285) < 3) triggerStop = true;
+                        }
+                        if (this.originDir === 'S' && this.y <= stopLines.S) {
+                            if (this.turn === 'left' && Math.abs(this.x - 355) < 3) triggerStop = true;
+                            if (this.turn === 'right' && Math.abs(this.x - 415) < 3) triggerStop = true;
+                        }
+                        if (this.originDir === 'W' && this.x >= stopLines.W) {
+                            if (this.turn === 'left' && Math.abs(this.y - 355) < 3) triggerStop = true;
+                            if (this.turn === 'right' && Math.abs(this.y - 415) < 3) triggerStop = true;
+                        }
+                        if (this.originDir === 'E' && this.x <= stopLines.E) {
+                            if (this.turn === 'left' && Math.abs(this.y - 345) < 3) triggerStop = true;
+                            if (this.turn === 'right' && Math.abs(this.y - 285) < 3) triggerStop = true;
+                        }
+
+                        if (triggerStop) {
+                            this.turning = true;
+                            this.turnT = 0;
+                        }
+                    }
+                }
+            }
+        }
+
+        // 鋪面直行指示標線
+        function drawStraightArrow(cx, cy, angle) {
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.rotate(angle);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.lineWidth = 1.5;
+            
+            ctx.beginPath();
+            ctx.moveTo(0, 8);
+            ctx.lineTo(0, -8);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(-3, -5);
+            ctx.lineTo(0, -9);
+            ctx.lineTo(3, -5);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        // 鋪面左轉指示標線
+        function drawLeftTurnArrow(cx, cy, angle) {
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.rotate(angle);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.lineWidth = 1.5;
+
+            ctx.beginPath();
+            ctx.moveTo(3, 8);
+            ctx.quadraticCurveTo(3, 0, -3, 0); 
+            ctx.stroke();
+
+            ctx.save();
+            ctx.translate(-3, 0);
+            ctx.rotate(-Math.PI/2);
+            ctx.beginPath();
+            ctx.moveTo(-3, 2);
+            ctx.lineTo(0, -2);
+            ctx.lineTo(3, 2);
+            ctx.fill();
+            ctx.restore();
+
+            ctx.restore();
+        }
+
+        // 鋪面「直行暨右轉混合」指示標線
+        function drawStraightRightArrow(cx, cy, angle) {
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.rotate(angle);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.lineWidth = 1.5;
+
+            // 直行主幹與箭頭
+            ctx.beginPath();
+            ctx.moveTo(0, 8);
+            ctx.lineTo(0, -8);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(-3, -5);
+            ctx.lineTo(0, -9);
+            ctx.lineTo(3, -5);
+            ctx.fill();
+
+            // 右轉分支
+            ctx.beginPath();
+            ctx.moveTo(0, 2);
+            ctx.quadraticCurveTo(0, -3, 5, -3);
+            ctx.stroke();
+
+            ctx.save();
+            ctx.translate(5, -3);
+            ctx.rotate(Math.PI/2);
+            ctx.beginPath();
+            ctx.moveTo(-3, 2);
+            ctx.lineTo(0, -2);
+            ctx.lineTo(3, 2);
+            ctx.fill();
+            ctx.restore();
+
+            ctx.restore();
+        }
+
+        function drawMap() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 柏油路交叉區
+            ctx.fillStyle = '#374151'; 
+            ctx.fillRect(center - roadWidth/2, 0, roadWidth, canvas.height);
+            ctx.fillRect(0, center - roadWidth/2, canvas.width, roadWidth);
+            ctx.fillRect(center - roadWidth/2, center - roadWidth/2, roadWidth, roadWidth);
+
+            // 中央綠島
+            ctx.fillStyle = '#1e3a1e'; 
+            ctx.strokeStyle = '#22c55e'; 
+            ctx.lineWidth = 2.5;
+
+            // 1. 北側分隔島
+            ctx.beginPath();
+            ctx.moveTo(370, 0);
+            ctx.lineTo(370, 260);
+            ctx.lineTo(360, 260);
+            ctx.lineTo(360, 120);
+            ctx.bezierCurveTo(360, 85, 330, 85, 330, 50);
+            ctx.lineTo(330, 0);
+            ctx.closePath(); ctx.fill(); ctx.stroke();
+
+            // 2. 南側分隔島
+            ctx.beginPath();
+            ctx.moveTo(330, 700);
+            ctx.lineTo(330, 440);
+            ctx.lineTo(340, 440);
+            ctx.lineTo(340, 580);
+            ctx.bezierCurveTo(340, 615, 370, 615, 370, 650);
+            ctx.lineTo(370, 700);
+            ctx.closePath(); ctx.fill(); ctx.stroke();
+
+            // 3. 西側分隔島
+            ctx.beginPath();
+            ctx.moveTo(0, 330);
+            ctx.lineTo(260, 330);
+            ctx.lineTo(260, 340);
+            ctx.lineTo(120, 340);
+            ctx.bezierCurveTo(85, 340, 85, 370, 50, 370);
+            ctx.lineTo(0, 370);
+            ctx.closePath(); ctx.fill(); ctx.stroke();
+
+            // 4. 東側分隔島
+            ctx.beginPath();
+            ctx.moveTo(700, 370);
+            ctx.lineTo(440, 370);
+            ctx.lineTo(440, 360);
+            ctx.lineTo(580, 360);
+            ctx.bezierCurveTo(615, 360, 615, 330, 650, 330);
+            ctx.lineTo(700, 330);
+            ctx.closePath(); ctx.fill(); ctx.stroke();
+
+            // 標線繪製系統
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 1.5;
+
+            // 雙車道與離去車道白虛線
+            ctx.setLineDash([8, 8]);
+            ctx.beginPath(); ctx.moveTo(400, 0); ctx.lineTo(400, 260); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(300, 700); ctx.lineTo(300, 440); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0, 400); ctx.lineTo(260, 400); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(700, 300); ctx.lineTo(440, 300); ctx.stroke();
+
+            ctx.beginPath(); ctx.moveTo(300, 0); ctx.lineTo(300, 260); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(400, 700); ctx.lineTo(400, 440); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0, 300); ctx.lineTo(260, 300); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(700, 400); ctx.lineTo(440, 400); ctx.stroke();
+
+            // 左轉口袋車道雙白實線
+            ctx.setLineDash([]);
+            ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(330, 50); ctx.lineTo(330, 260); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(370, 440); ctx.lineTo(370, 650); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(50, 370); ctx.lineTo(260, 370); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(440, 330); ctx.lineTo(650, 330); ctx.stroke();
+
+            // 白色厚實停止線
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 4;
+            ctx.beginPath(); ctx.moveTo(270, 260); ctx.lineTo(360, 260); ctx.stroke(); 
+            ctx.beginPath(); ctx.moveTo(340, 440); ctx.lineTo(430, 440); ctx.stroke(); 
+            ctx.beginPath(); ctx.moveTo(260, 340); ctx.lineTo(260, 430); ctx.stroke(); 
+            ctx.beginPath(); ctx.moveTo(440, 270); ctx.lineTo(440, 360); ctx.stroke(); 
+
+            // 地面路面方向指標箭頭 (最右側車道畫上「直行暨右轉混合箭頭」)
+            drawStraightRightArrow(285, 235, Math.PI);
+            drawStraightArrow(315, 235, Math.PI);
+            drawLeftTurnArrow(345, 235, Math.PI);
+            
+            drawStraightRightArrow(415, 465, 0);
+            drawStraightArrow(385, 465, 0);
+            drawLeftTurnArrow(355, 465, 0);
+            
+            drawStraightRightArrow(235, 415, Math.PI/2);
+            drawStraightArrow(235, 385, Math.PI/2);
+            drawLeftTurnArrow(235, 355, Math.PI/2);
+            
+            drawStraightRightArrow(465, 285, -Math.PI/2);
+            drawStraightArrow(465, 315, -Math.PI/2);
+            drawLeftTurnArrow(465, 345, -Math.PI/2);
+
+            // 路口內部導引虛線 (維持左轉導引)
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.18)';
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([4, 4]);
+            ctx.beginPath(); ctx.moveTo(345, 260); ctx.quadraticCurveTo(345, 385, 440, 385); ctx.stroke(); 
+            ctx.beginPath(); ctx.moveTo(355, 440); ctx.quadraticCurveTo(355, 315, 260, 315); ctx.stroke(); 
+            ctx.beginPath(); ctx.moveTo(260, 355); ctx.quadraticCurveTo(385, 355, 385, 260); ctx.stroke(); 
+            ctx.beginPath(); ctx.moveTo(440, 345); ctx.quadraticCurveTo(315, 345, 315, 440); ctx.stroke(); 
+            ctx.setLineDash([]);
+
+            // 四燈式紅綠燈
+            const drawLight = (x, y, isNS) => {
+                let isStraightGreen = isNS ? (lightState === 0) : (lightState === 4);
+                let isStraightYellow = isNS ? (lightState === 1) : (lightState === 5);
+                let isLeftGreen = isNS ? (lightState === 2) : (lightState === 6);
+                let isLeftYellow = isNS ? (lightState === 3) : (lightState === 7);
+                let isRed = !isStraightGreen && !isStraightYellow && !isLeftYellow;
+
+                ctx.fillStyle = '#111827';
+                ctx.fillRect(x - 32, y - 11, 64, 22);
+
+                const offColor = '#27272a';
+
+                const drawCircleLight = (lx, ly, color, isOn) => {
+                    ctx.fillStyle = isOn ? color : offColor;
+                    ctx.beginPath(); ctx.arc(lx, ly, 6, 0, Math.PI * 2); ctx.fill();
+                };
+
+                // 左轉綠燈 ⬅️
+                const lx = x - 23; 
+                ctx.fillStyle = isLeftGreen ? '#2dd4bf' : offColor;
+                ctx.beginPath();
+                ctx.moveTo(lx - 4, y); 
+                ctx.lineTo(lx + 1, y - 5); 
+                ctx.lineTo(lx + 1, y - 2); 
+                ctx.lineTo(lx + 5, y - 2); 
+                ctx.lineTo(lx + 5, y + 2); 
+                ctx.lineTo(lx + 1, y + 2); 
+                ctx.lineTo(lx + 1, y + 5); 
+                ctx.closePath();
+                ctx.fill();
+
+                // 紅燈 🔴
+                drawCircleLight(x - 8, y, '#ef4444', isRed);
+
+                // 黃燈 🟡
+                drawCircleLight(x + 7, y, '#f59e0b', isStraightYellow || isLeftYellow);
+
+                // 直行綠燈 🟢
+                drawCircleLight(x + 22, y, '#10b981', isStraightGreen);
+            };
+
+            drawLight(230, 230, true); 
+            drawLight(470, 470, true); 
+            drawLight(230, 470, false); 
+            drawLight(470, 230, false); 
+        }
+
+        function gameLoop(timestamp) {
+            let dt = timestamp - lastTime;
+            lastTime = timestamp;
+
+            let nsCPM = parseInt(nsRateInput.value);
+            let ewCPM = parseInt(ewRateInput.value);
+
+            // 動態調整綠燈時間
+            phaseDurations[0] = 2000 + (nsCPM / 120) * 6000; 
+            phaseDurations[2] = 1500 + (nsCPM / 120) * 3000; 
+            phaseDurations[4] = 2000 + (ewCPM / 120) * 6000; 
+            phaseDurations[6] = 1500 + (ewCPM / 120) * 3000; 
+
+            lightTimer += dt;
+            if (lightTimer >= phaseDurations[lightState]) {
+                lightTimer = 0;
+                lightState = (lightState + 1) % 8;
+                const statusTexts = [
+                    "南北直行綠燈 ⬆️", "南北黃燈 🟡", "南北左轉綠燈 ↖️", "南北左轉黃燈 🟡",
+                    "東西直行綠燈 ⬅️", "東西黃燈 🟡", "東西左轉綠燈 ↙️", "東西左轉黃燈 🟡"
+                ];
+                lightStatusTxt.innerHTML = statusTexts[lightState];
+                lightStatusTxt.className = `font-bold ${lightState%2===0 ? 'text-green-600' : 'text-yellow-500'}`;
+            }
+
+            // 生成控制
+            if (nsCPM > 0) {
+                spawnTimers.NS += dt;
+                let nsInterval = 60000 / nsCPM;
+                if (spawnTimers.NS > nsInterval) {
+                    spawnTimers.NS = 0;
+                    cars.push(new Car(Math.random() > 0.5 ? 'N' : 'S'));
+                }
+            }
+
+            if (ewCPM > 0) {
+                spawnTimers.EW += dt;
+                let ewInterval = 60000 / ewCPM;
+                if (spawnTimers.EW > ewInterval) {
+                    spawnTimers.EW = 0;
+                    cars.push(new Car(Math.random() > 0.5 ? 'W' : 'E'));
+                }
+            }
+
+            drawMap();
+            
+            let carsAhead = [...cars];
+
+            cars = cars.filter(car => {
+                return car.x > -100 && car.x < canvas.width + 100 && 
+                       car.y > -100 && car.y < canvas.height + 100;
+            });
+
+            cars.forEach(car => {
+                car.update(carsAhead);
+                car.draw();
+            });
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        requestAnimationFrame(gameLoop);
+    </script>
+</body>
+</html>

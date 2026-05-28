@@ -20,7 +20,6 @@
 
     <div class="w-full max-w-4xl space-y-8">
         
-        <!-- Header -->
         <div class="text-center space-y-2 mb-12">
             <h1 class="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400 tracking-wide">
                 My Projects
@@ -28,10 +27,8 @@
             <p class="text-slate-400 text-lg">個人工具與專案索引</p>
         </div>
 
-        <!-- Grid Container -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
-            <!-- Card 1: 531 Training -->
             <a href="./Training531/index.html" class="group relative bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-2xl p-6 hover:border-blue-500/50 hover:bg-slate-800 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/10 hover:-translate-y-1 card-hover overflow-hidden">
                 <div class="absolute top-0 right-0 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl -mr-10 -mt-10 transition-opacity opacity-0 group-hover:opacity-100"></div>
                 
@@ -49,7 +46,6 @@
                 </div>
             </a>
 
-            <!-- Card 2: FFT Spectrum Analyzer -->
             <a href="./FFT_Spectrum_Analyzer/index.html" class="group relative bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-2xl p-6 hover:border-purple-500/50 hover:bg-slate-800 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/10 hover:-translate-y-1 card-hover overflow-hidden">
                 <div class="absolute top-0 right-0 w-24 h-24 bg-purple-500/10 rounded-full blur-2xl -mr-10 -mt-10 transition-opacity opacity-0 group-hover:opacity-100"></div>
                 
@@ -67,7 +63,6 @@
                 </div>
             </a>
 
-            <!-- Card 3: EInk Converter -->
             <a href="./EInkConVerter/index.html" class="group relative bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-2xl p-6 hover:border-emerald-500/50 hover:bg-slate-800 transition-all duration-300 hover:shadow-lg hover:shadow-emerald-500/10 hover:-translate-y-1 card-hover overflow-hidden">
                 <div class="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl -mr-10 -mt-10 transition-opacity opacity-0 group-hover:opacity-100"></div>
                 
@@ -85,7 +80,6 @@
                 </div>
             </a>
 
-            <!-- Card 4: Lucky Wheel -->
             <a href="./LuckyWheel/index.html" class="group relative bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-2xl p-6 hover:border-amber-500/50 hover:bg-slate-800 transition-all duration-300 hover:shadow-lg hover:shadow-amber-500/10 hover:-translate-y-1 card-hover overflow-hidden">
                 <div class="absolute top-0 right-0 w-24 h-24 bg-amber-500/10 rounded-full blur-2xl -mr-10 -mt-10 transition-opacity opacity-0 group-hover:opacity-100"></div>
                 
@@ -102,16 +96,32 @@
                     </div>
                 </div>
             </a>
+
+            <a href="./TrafficSimulator/index.html" class="group relative bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-2xl p-6 hover:border-rose-500/50 hover:bg-slate-800 transition-all duration-300 hover:shadow-lg hover:shadow-rose-500/10 hover:-translate-y-1 card-hover overflow-hidden">
+                <div class="absolute top-0 right-0 w-24 h-24 bg-rose-500/10 rounded-full blur-2xl -mr-10 -mt-10 transition-opacity opacity-0 group-hover:opacity-100"></div>
+                
+                <div class="flex flex-col h-full justify-between space-y-4">
+                    <div class="flex items-start justify-between">
+                        <div class="p-3 bg-rose-500/10 rounded-xl text-rose-400 group-hover:text-rose-300 group-hover:bg-rose-500/20 transition-colors">
+                            <i data-lucide="car" class="w-8 h-8 transition-transform duration-300"></i>
+                        </div>
+                        <i data-lucide="arrow-up-right" class="w-5 h-5 text-slate-500 group-hover:text-rose-400 transition-colors"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-white mb-1">Traffic Simulator</h2>
+                        <p class="text-sm text-slate-400">即時路況與車流動態模擬系統</p>
+                    </div>
+                </div>
+            </a>
+
         </div>
 
-        <!-- Footer -->
         <div class="text-center mt-16 pt-8 border-t border-slate-800/50">
             <p class="text-slate-500 text-sm">© Local Development Dashboard</p>
         </div>
 
     </div>
 
-    <!-- Initialize Icons -->
     <script>
         lucide.createIcons();
     </script>
