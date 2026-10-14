@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>設備螢幕資訊登記系統</title>
+  <style>
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+      padding: 2.5rem 1rem; 
+      background: #f0f2f5; 
+      margin: 0;
+    }
+    .card { 
+      background: white; 
+      max-width: 480px; 
+      margin: 0 auto; 
+      padding: 2rem; 
+      border-radius: 10px; 
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08); 
+    }
+    h2 { 
+      margin-top: 0; 
+      color: #1a1a1a; 
+      font-size: 1.4rem;
+      border-bottom: 2px solid #0066cc;
+      padding-bottom: 0.6rem;
+    }
+    .form-group { 
+      margin-bottom: 1.25rem; 
+    }
+    label { 
+      display: block; 
+      margin-bottom: 0.4rem; 
+      font-weight: 600; 
+      color: #333; 
+    }
+    input { 
+      width: 100%; 
+      padding: 0.65rem 0.75rem; 
+      border: 1px solid #ccd0d5; 
+      border-radius: 6px; 
+      box-sizing: border-box; 
+      font-size: 0.95rem;
+    }
+    input:focus {
+      outline: none;
+      border-color: #0066cc;
+      box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.2);
+    }
+    button { 
+      width: 100%; 
+      padding: 0.8rem; 
+      background: #0066cc; 
+      color: white; 
+      border: none; 
+      border-radius: 6px; 
+      font-size: 1rem; 
+      font-weight: bold;
+      cursor: pointer; 
+      transition: background 0.2s;
+    }
+    button:hover { 
+      background: #0052a3; 
+    }
+    button:disabled { 
+      background: #a0b2c6; 
+      cursor: not-allowed; 
+    }
+    #status { 
+      margin-top: 1.25rem; 
+      padding: 0.85rem; 
+      border-radius: 6px; 
+      display: none; 
+      font-size: 0.95rem;
+      line-height: 1.4;
+    }
+    .pending { background: #fff8e1; color: #8a6d3b; border: 1px solid #ffeeba; }
+    .success { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
+    .error { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <h2>螢幕硬體資訊登記</h2>
+  
+  <div class="form-group">
+    <label for="empId">工號</label>
+    <input type="text" id="empId" placeholder="請輸入工號" autocomplete="off" required>
+  </div>
+
+  <div class="form-group">
+    <label for="username">使用者名稱</label>
+    <input type="text" id="username" placeholder="請輸入姓名或帳號名稱" autocomplete="off" required>
+  </div>
+
+  <button id="submitBtn" onclick="collectAndSubmit()">偵測螢幕並送出資料</button>
+  <div id="status"></div>
+</div>
+
+<script>
+// 請替換為您的 Google Apps Script Web App 部署網址
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwZrDt4A6fh21ZgwKV9bDG_jPCRvL5OFbCXNth-9Lv_7iMJAtcu9-hTRJM_GtvFbW-_/exec";
+
+// 常見螢幕品牌清單，用以從 label 內提取品牌
+const KNOWN_BRANDS = [
+  "DELL", "ASUS", "ACER", "BENQ", "SAMSUNG", "LG", 
+  "VIEWSONIC", "GIGABYTE", "MSI", "PHILIPS", "APPLE", 
+  "AOC", "HP", "LENOVO", "EIZO", "IIYAMA"
+];
+
+function parseScreenLabel(label) {
+  if (!label) return { brand: "未知廠牌", model: "未識別螢幕" };
+  
+  const upper = label.toUpperCase();
+  let brand = "其他";
+  let model = label;
+
+  for (const b of KNOWN_BRANDS) {
+    if (upper.includes(b)) {
+      brand = b;
+      model = label.replace(new RegExp(b, "i"), "").trim();
+      break;
+    }
+  }
+
+  if (upper.includes("RETINA") || upper.includes("BUILT-IN")) {
+    brand = "Apple / 內建螢幕";
+  }
+
+  return { brand, model: model || label };
+}
+
+async function collectAndSubmit() {
+  const empId = document.getElementById("empId").value.trim();
+  const username = document.getElementById("username").value.trim();
+  const statusEl = document.getElementById("status");
+  const btn = document.getElementById("submitBtn");
+
+  if (!empId) {
+    alert("請輸入工號！");
+    document.getElementById("empId").focus();
+    return;
+  }
+
+  if (!username) {
+    alert("請輸入使用者名稱！");
+    document.getElementById("username").focus();
+    return;
+  }
+
+  btn.disabled = true;
+  statusEl.style.display = "block";
+  statusEl.className = "pending";
+  statusEl.innerText = "偵測螢幕資訊中，若瀏覽器提示「管理各個螢幕上的視窗」請點選「允許」...";
+
+  let screensPayload = [];
+
+  try {
+    // 檢查瀏覽器是否支援 Window Management API
+    if ("getScreenDetails" in window) {
+      const screenDetails = await window.getScreenDetails();
+      screensPayload = screenDetails.screens.map((s, index) => {
+        const { brand, model } = parseScreenLabel(s.label);
+        return {
+          screenId: `螢幕 ${index + 1}${s.isPrimary ? " (主)" : ""}`,
+          brand: brand,
+          model: model || s.label || "標準螢幕"
+        };
+      });
+    } else {
+      // 降級方案：無法取得完整多螢幕 label 時，記錄當前畫面規格
+      screensPayload.push({
+        screenId: "螢幕 1 (主)",
+        brand: "瀏覽器限制無法獲取廠牌",
+        model: `${window.screen.width} x ${window.screen.height}`
+      });
+    }
+
+    statusEl.innerText = "正在將資料寫入 Google 試算表，請稍候...";
+
+    // 發送資料至 Google Apps Script
+    await fetch(SCRIPT_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        empId,
+        username,
+        screens: screensPayload
+      })
+    });
+
+    statusEl.className = "success";
+    statusEl.innerText = `登記完成！已成功回報 ${screensPayload.length} 台螢幕資訊至試算表。`;
+  } catch (err) {
+    statusEl.className = "error";
+    statusEl.innerText = "登記失敗：" + err.message;
+  } finally {
+    btn.disabled = false;
+  }
+}
+</script>
+
+</body>
+</html>
